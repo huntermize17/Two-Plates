@@ -19,7 +19,7 @@
 :root{
   --bg:#eef0ee; --surface:#ffffff; --sunk:#e3e6e3; --line:#cfd4d0; --fg:#15191a; --muted:#5d6763;
   --accent:#1d4ed8; --accent-fg:#ffffff; --good:#15803d; --warn:#b45309;
-  --p-red:#c8312b; --p-blue:#1d4ed8; --p-yellow:#d9a400; --p-green:#2f8a3a; --p-black:#2a2f31; --p-white:#8a9592;
+  --p-red:#c8312b; --p-blue:#1d4ed8; --p-yellow:#d9a400; --p-green:#2f8a3a; --p-black:#2a2f31; --p-white:#8a9592; --p-orange:#c2570c; --p-teal:#0f766e; --p-purple:#6d3fd4;
   --display:"Saira Condensed","Arial Narrow",Impact,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -28,12 +28,12 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#111415; --surface:#1a1f20; --sunk:#232a2b; --line:#333c3d; --fg:#e9eeec; --muted:#9aa6a2;
   --accent:#5b8cff; --accent-fg:#0b1020; --good:#4ade80; --warn:#f0a44b;
-  --p-red:#e0544d; --p-blue:#5b8cff; --p-yellow:#e8bd2c; --p-green:#4fb35b; --p-black:#7c8789; --p-white:#b9c2bf;
+  --p-red:#e0544d; --p-blue:#5b8cff; --p-yellow:#e8bd2c; --p-green:#4fb35b; --p-black:#7c8789; --p-white:#b9c2bf; --p-orange:#f08a3c; --p-teal:#2bb3a3; --p-purple:#9b7bff;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111415; --surface:#1a1f20; --sunk:#232a2b; --line:#333c3d; --fg:#e9eeec; --muted:#9aa6a2;
   --accent:#5b8cff; --accent-fg:#0b1020; --good:#4ade80; --warn:#f0a44b;
-  --p-red:#e0544d; --p-blue:#5b8cff; --p-yellow:#e8bd2c; --p-green:#4fb35b; --p-black:#7c8789; --p-white:#b9c2bf;
+  --p-red:#e0544d; --p-blue:#5b8cff; --p-yellow:#e8bd2c; --p-green:#4fb35b; --p-black:#7c8789; --p-white:#b9c2bf; --p-orange:#f08a3c; --p-teal:#2bb3a3; --p-purple:#9b7bff;
   color-scheme:dark}
 *{box-sizing:border-box}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -77,7 +77,7 @@ h3{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .plate{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--display);font-weight:800;color:#fff;font-size:1rem;box-shadow:inset 0 0 0 4px rgba(0,0,0,.18)}
 .plate::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--surface);position:absolute;opacity:0}
-.t-upper{background:var(--p-blue)} .t-lower{background:var(--p-red)} .t-full{background:var(--p-yellow);color:#1b1b1b} .t-push{background:var(--p-green)} .t-pull{background:var(--p-black)} .t-legs{background:var(--p-red)} .t-cond{background:var(--p-white);color:#1b1b1b}
+.t-upper{background:var(--p-blue)} .t-armcare{background:var(--p-teal)} .t-speed{background:var(--p-orange)} .t-jump{background:var(--p-purple)} .t-lower{background:var(--p-red)} .t-full{background:var(--p-yellow);color:#1b1b1b} .t-push{background:var(--p-green)} .t-pull{background:var(--p-black)} .t-legs{background:var(--p-red)} .t-cond{background:var(--p-white);color:#1b1b1b}
 .day{overflow:hidden}
 .day-h{display:flex;align-items:center;gap:10px;padding:12px 12px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .day-h .name{flex:1 1 160px;min-width:0;display:flex;flex-direction:column}
@@ -248,9 +248,11 @@ const EQUIP=[["bb","Barbell + plates"],["rk","Squat rack"],["bn","Bench"],["pu",
 const LIMITS=[["shoulder","Shoulder"],["lowerback","Lower back"],["knee","Knee"],["elbow","Elbow"],["wrist","Wrist"]];
 const INTENSITY=[["light","Light"],["moderate","Moderate"],["hard","Hard"]];
 const STYLES=[["strength","Strength"],["muscle","Muscle building"],["athletic","Athletic"],["general","General fitness"]];
-const SLOTS={squat:"Squat",hinge:"Hinge",single:"Single leg",post:"Hamstrings & glutes",calf:"Calves",core:"Core",hpush:"Horizontal push",vpush:"Overhead push",hpull:"Row",vpull:"Vertical pull",tri:"Triceps",bi:"Biceps",delt:"Shoulders",power:"Power",cond:"Conditioning"};
-const FALLBACK={vpull:"hpull",delt:"hpull",calf:"single",bi:"hpull",tri:"hpush",power:"cond",post:"hinge",single:"squat"};
-const ACCESSORY=new Set(["core","calf","cond","tri","bi","delt"]);
+const SLOTS={squat:"Squat",hinge:"Hinge",single:"Single leg",post:"Hamstrings & glutes",calf:"Calves",core:"Core",hpush:"Horizontal push",vpush:"Overhead push",hpull:"Row",vpull:"Vertical pull",tri:"Triceps",bi:"Biceps",delt:"Shoulders",power:"Power",cond:"Conditioning",rotpow:"Rotational power",arm:"Arm care",speed:"Speed",agility:"Agility",jump:"Jumps & landing",neck:"Neck & traps"};
+const FALLBACK={vpull:"hpull",delt:"hpull",calf:"single",bi:"hpull",tri:"hpush",power:"cond",post:"hinge",single:"squat",vpush:"arm",rotpow:"power",jump:"power",speed:"cond",agility:"cond",arm:"delt",neck:"core"};
+const ACCESSORY=new Set(["core","calf","cond","tri","bi","delt","arm","neck"]);
+/* explosive work: done first in a session while fresh, never treated as a main strength lift */
+const POWERISH=new Set(["power","rotpow","speed","agility","jump"]);
 const DAYTYPES={
   upper:{label:"Upper",ab:"U",slots:["hpush","hpull","vpush","vpull","tri","bi","delt","core"]},
   lower:{label:"Lower",ab:"L",slots:["squat","hinge","single","post","core","calf","core"]},
@@ -258,7 +260,10 @@ const DAYTYPES={
   push:{label:"Push",ab:"Pu",slots:["hpush","vpush","hpush","tri","delt","core","tri"]},
   pull:{label:"Pull",ab:"Pl",slots:["vpull","hpull","hinge","bi","delt","core","hpull"]},
   legs:{label:"Legs",ab:"Lg",slots:["squat","hinge","single","post","calf","core","single"]},
-  cond:{label:"Conditioning",ab:"C",slots:["power","cond","cond","core","cond","core"]}
+  cond:{label:"Conditioning",ab:"C",slots:["power","cond","cond","core","cond","core"]},
+  armcare:{label:"Arm Care",ab:"A",slots:["arm","rotpow","hpull","arm","core","arm","delt"]},
+  speed:{label:"Speed & Agility",ab:"S",slots:["speed","agility","jump","single","speed","core","agility"]},
+  jump:{label:"Jump Training",ab:"J",slots:["jump","squat","jump","single","calf","core","jump"]}
 };
 const PRESETS={
   2:[["Upper / Lower",["upper","lower"]],["2 Full Body",["full","full"]]],
@@ -385,12 +390,93 @@ const BASE=[
 ["lm-rot-press","Landmine Rotational Press","power","bb lm","shoulder"],
 ["lm-lat-raise","Landmine Lateral Raise","delt","bb lm","shoulder"],
 ["lm-antirot","Landmine Anti-Rotation Hold","core","bb lm","",1],
-["lm-thruster","Landmine Thruster","cond","bb lm","knee"]
+["lm-thruster","Landmine Thruster","cond","bb lm","knee"],
+["mb-scoop","Med Ball Rotational Scoop Toss","rotpow","mb","lowerback"],
+["mb-shotput","Med Ball Shot-Put Throw","rotpow","mb","shoulder"],
+["plate-chop","Split-Stance Plate Chop","rotpow","bb","lowerback"],
+["band-rot-pull","Band Rotational Pull","rotpow","bd",""],
+["band-rot-punch","Band Rotational Punch","rotpow","bd",""],
+["band-er","Band External Rotation","arm","bd",""],
+["band-ir","Band Internal Rotation","arm","bd",""],
+["band-90-90","Band 90/90 External Rotation","arm","bd",""],
+["sidelying-er","Side-Lying External Rotation","arm","bw",""],
+["scap-pushup","Scap Push-Up","arm","bw","wrist"],
+["wall-slide","Wall Slide","arm","bw",""],
+["plate-wrist","Plate Wrist Curl","arm","bb",""],
+["sleeper","Sleeper Stretch","arm","bw","",1],
+["sprint-10","10-Yard Sprint","speed","bw","knee"],
+["falling-start","Falling Start Sprint","speed","bw","knee"],
+["flying-20","Flying 20-Yard Sprint","speed","bw","knee"],
+["a-skip","A-Skip","speed","bw",""],
+["wall-drive","Wall Drive Drill","speed","bw",""],
+["sled-sprint","Sled Sprint","speed","sled","knee"],
+["pro-agility","Pro Agility Drill (5-10-5)","agility","bw","knee"],
+["lat-shuffle","Lateral Shuffle","agility","bw","knee"],
+["t-drill","T-Drill","agility","bw","knee"],
+["decel-drill","Sprint and Stick Deceleration","agility","bw","knee"],
+["crossover-start","Crossover Start","agility","bw",""],
+["carioca","Carioca","agility","bw",""],
+["depth-drop","Depth Drop","jump","box|bn","knee"],
+["pogo","Pogo Hops","jump","bw","knee"],
+["sl-hop","Single-Leg Hop and Stick","jump","bw","knee"],
+["lat-bound","Lateral Bound","jump","bw","knee"],
+["tuck-jump","Tuck Jump","jump","bw","knee"],
+["approach-jump","Approach Vertical Jump","jump","bw","knee"],
+["bb-shrug","Barbell Shrug","neck","bb",""],
+["neck-iso","4-Way Neck Isometric","neck","bw","",1],
+["band-neck","Band Neck Extension","neck","bd",""],
+["tib-raise","Tibialis Raise","calf","bw",""],
+["copenhagen","Copenhagen Plank","core","bn","knee",1]
 ].map(([id,name,slot,req,avoid,timed])=>({id,name,slot,req,avoid:avoid?avoid.split(" "):[],timed:!!timed}));
 
 /* ---------- state ---------- */
 const DURATIONS=[[30,"30 min"],[45,"45 min"],[60,"60 min"],[75,"75 min"],[90,"90 min"],[0,"No limit"]];
 const WARMUP=300;
+/* exercises that also count for another movement type */
+const ALSO={"mb-rot-throw":["rotpow"],"lm-rot-press":["rotpow"],"landmine-rot":["rotpow"],"pull-apart":["arm"],"face-pull":["arm"],"ytw":["arm"],"box-jump":["jump"],"broad-jump":["jump"],"jump-squat":["jump"]};
+/* sport training: inject = movement types added to each day type (priority right after the first two main lifts) */
+const SEASONS=[["off","Off-season"],["pre","Pre-season"],["in","In-season"]];
+const SEASON_HINT={off:"Off-season builds strength and size.",pre:"Pre-season drops main lifts to lower reps and adds more power and speed work.",in:"In-season uses fewer sets and keeps workouts to 45 minutes or less so you stay fresh for games."};
+const PROFILES={
+  baseball:{label:"Baseball / Softball",power:"rotpow",
+    hint:"Adds rotational power, arm care and single-leg work, and favors exercises that are easier on the shoulder and elbow.",
+    positions:[["position","Position player"],["pitcher","Pitcher"]],
+    pos:{pitcher:{extra:["arm"],avoid:["ohp","push-press","z-press","db-press","pike-pushup","thruster","lm-thruster","plate-raise","dips","bench-dip"],avoidLabel:"Skipped for pitchers",hint:"Pitchers skip overhead pressing and get extra arm care."}},
+    inject:{upper:["rotpow","arm"],lower:["rotpow","jump"],full:["rotpow","arm"],push:["arm","rotpow"],pull:["rotpow","arm"],legs:["jump","rotpow"],cond:["speed","agility"]},
+    prefer:["tb-deadlift","rdl","front-squat","lm-sl-rdl","reverse-lunge","lateral-lunge","lm-hk-press","landmine-press","lm-sa-press","meadows","lm-sa-row","db-row","chinup","pullup","mb-rot-throw","lm-rot-press","mb-scoop","band-er","face-pull","crossover-start","sprint-10","lat-bound","hip-thrust"]},
+  soccer:{label:"Soccer",power:"speed",
+    hint:"Adds sprint and change-of-direction work, plus hamstring and groin strength like Nordic curls and Copenhagen planks.",
+    inject:{upper:["speed"],lower:["speed","post"],full:["agility","post"],push:["speed"],pull:["speed"],legs:["agility","post"],cond:["speed","agility"]},
+    prefer:["nordic","copenhagen","rdl","reverse-lunge","bulgarian","step-up","sl-calf","tib-raise","decel-drill","pro-agility","flying-20","lat-bound","front-squat","hip-thrust"]},
+  football:{label:"Football",power:"power",
+    hint:"Adds explosive lifts, sprints, and neck and trap work.",
+    positions:[["skill","Skill (WR, DB, RB)"],["bigskill","Big skill (LB, TE, QB)"],["line","Lineman"]],
+    pos:{skill:{extra:["agility"],hint:"Skill players get extra speed and change-of-direction work."},bigskill:{hint:"Big skill players get a balance of strength, power and speed."},line:{swap:{speed:"neck",agility:"power"},hint:"Linemen trade sprint work for more power and neck strength."}},
+    inject:{upper:["neck","power"],lower:["power","speed"],full:["power","neck"],push:["neck"],pull:["neck","power"],legs:["power","speed"],cond:["speed","agility"]},
+    prefer:["power-clean","hang-clean","back-squat","bench","tb-deadlift","deadlift","bb-shrug","sled-push","sled-sprint","push-press","front-squat","pendlay","neck-iso","sprint-10","falling-start","box-jump","broad-jump"]},
+  basketball:{label:"Basketball",power:"jump",
+    hint:"Adds jump and landing work, lateral quickness, and ankle and calf strength.",
+    inject:{upper:["jump"],lower:["jump","calf"],full:["jump","agility"],push:["jump"],pull:["jump"],legs:["jump","calf"],cond:["agility","jump"]},
+    prefer:["front-squat","bulgarian","step-up","rdl","sl-rdl","lateral-lunge","sl-calf","tib-raise","box-jump","depth-drop","approach-jump","pogo","lat-shuffle","copenhagen","landmine-press","pullup"]}
+};
+const SPORT_PRESETS={
+  baseball:{3:["Lower / Upper / Speed",["lower","upper","speed"]],4:["Lower / Upper / Speed / Arm Care",["lower","upper","speed","armcare"]],5:["Upper / Lower / Speed / Full / Arm Care",["upper","lower","speed","full","armcare"]]},
+  soccer:{3:["Lower / Upper / Speed",["lower","upper","speed"]],4:["Lower / Speed / Upper / Full",["lower","speed","upper","full"]],5:["Lower / Speed / Upper / Full / Conditioning",["lower","speed","upper","full","cond"]]},
+  football:{3:["Full / Speed / Full",["full","speed","full"]],4:["Lower / Upper / Speed / Full",["lower","upper","speed","full"]],5:["Upper / Lower / Speed / Upper / Lower",["upper","lower","speed","upper","lower"]]},
+  basketball:{3:["Lower / Upper / Jump",["lower","upper","jump"]],4:["Lower / Upper / Jump / Full",["lower","upper","jump","full"]],5:["Lower / Upper / Jump / Full / Speed",["lower","upper","jump","full","speed"]]}
+};
+function sportOn(){const s=S.settings;return !!(s&&s.sport&&PROFILES[s.sport])}
+function sportProf(){return sportOn()?PROFILES[S.settings.sport]:null}
+function sportPos(){const p=sportProf();return p&&p.pos?(p.pos[S.settings.position]||{}):{}}
+function season(){return sportOn()?(S.settings.season||"off"):"off"}
+function sportAvoid(){return new Set(sportPos().avoid||[])}
+function sportBlocked(e){return sportAvoid().has(e.id)}
+function sportLabel(){const p=sportProf();if(!p)return "";const pos=p.positions&&p.positions.find(x=>x[0]===S.settings.position);return [p.label,pos&&pos[1].replace(/ \(.*\)/,""),lbl(SEASONS,season())].filter(Boolean).join(" · ")}
+function presetsFor(days){const p=sportProf(),sp=p&&(SPORT_PRESETS[S.settings.sport]||{})[days];return (sp?[[p.label.split(" /")[0]+": "+sp[0],sp[1]]]:[]).concat(PRESETS[days]||[])}
+/* in-season sessions are capped at 45 minutes */
+function targetMin(){const m=S.settings.minutes;return season()==="in"?(m?Math.min(m,45):45):m}
+function capMain(){return {off:5,pre:4,in:3}[season()]}
+function capAcc(){return season()==="in"?3:4}
 const DEFAULT_SETTINGS={days:4,split:["upper","lower","upper","lower"],minutes:60,intensity:"moderate",style:"strength",equip:["bb","rk","bn"],limits:[],unit:"lb"};
 const S={settings:null,plan:null,lib:{custom:[],links:{}},active:null,sessions:[]};
 let tab="week", mode="local", db=null, uid=null, timerState=null, needsRender=false;
@@ -412,16 +498,29 @@ function codesFor(name){const n=name.toLowerCase();return KNOWN.filter(([re])=>r
 function equipSet(){const s=S.settings,o=s.otherEquip||[];return new Set([...s.equip,...o.flatMap(codesFor),...o.map(slug)])}
 function hasEquip(ex,eq){const set=eq?new Set(eq):equipSet();return ex.req.split(" ").every(t=>t==="bw"||t.split("|").some(e=>set.has(e)))}
 function flags(ex){return ex.avoid.filter(a=>S.settings.limits.includes(a))}
-function candidates(slot){return allEx().filter(e=>e.slot===slot&&hasEquip(e)&&!flags(e).length)}
+function fitsSlot(e,slot){return e.slot===slot||(ALSO[e.id]||[]).includes(slot)}
+function candidates(slot){
+  const av=sportAvoid(),p=sportProf(),pref=p?p.prefer:[];
+  const list=allEx().filter(e=>fitsSlot(e,slot)&&hasEquip(e)&&!flags(e).length&&!av.has(e.id));
+  if(!pref.length)return list;
+  // the sport's preferred exercises come first, so week 1 picks them and rotation moves on from there
+  const r=e=>{const k=pref.indexOf(e.id);return k<0?999:k};
+  return list.map((e,i)=>[e,i]).sort((a,b)=>r(a[0])-r(b[0])||a[1]-b[1]).map(x=>x[0]);
+}
 
 /* ---------- plan generation ---------- */
 function rx(ex,slot,i){
-  const s=S.settings, main=i<2&&!ACCESSORY.has(slot)&&slot!=="power";
-  const sets={light:[3,2],moderate:[4,3],hard:[5,3]}[s.intensity][main?0:1];
+  const s=S.settings,sea=season(),pw=POWERISH.has(slot),main=i<2&&!ACCESSORY.has(slot)&&!pw;
+  let sets={light:[3,2],moderate:[4,3],hard:[5,3]}[s.intensity][main?0:1];
   let reps={strength:main?"5":"8",muscle:main?"8":"12",athletic:main?"5":"8",general:main?"8":"10"}[s.style];
-  if(slot==="power")reps="3";
+  // pre- and in-season: heavier, lower-rep main lifts
+  if(main&&sea!=="off")reps={strength:"3",muscle:"6",athletic:"3",general:"5"}[s.style];
+  const SPR={power:"3",rotpow:"5/side",speed:"4",agility:"4",jump:"5",arm:"15",neck:"12"};
+  if(SPR[slot])reps=SPR[slot];
   if(ex.timed)reps=slot==="cond"?"40s":"30s";
-  const rest=slot==="power"?120:main?(s.style==="strength"?150:120):(slot==="cond"?45:60);
+  if(pw)sets=sea==="pre"?4:3;
+  if(sea==="in")sets=Math.min(sets,main?3:2);
+  const rest=pw?(slot==="power"?120:90):main?(s.style==="strength"?150:120):(slot==="cond"?45:(slot==="arm"||slot==="neck")?45:60);
   return {sets,reps,rest};
 }
 /* time estimate: each set = working time + rest, plus a minute to change exercises; warm-up added per day */
@@ -433,7 +532,7 @@ function ssRest(u){return Math.max(45,Math.round(Math.max(...u.map(i=>i.rest||60
 function unitSec(u){if(u.length===1)return estSec(u[0]);const sets=Math.max(...u.map(i=>i.sets));return sets*(u.reduce((n,i)=>n+workSec(i),0)+20*(u.length-1)+ssRest(u))+60*u.length}
 function totalSec(items){return units(items).reduce((n,u)=>n+unitSec(u),0)}
 function dayMinutes(items){return Math.round((WARMUP+totalSec(items))/60)}
-const isMain=it=>!ACCESSORY.has(it.slot)&&it.slot!=="power";
+const isMain=it=>!ACCESSORY.has(it.slot)&&!POWERISH.has(it.slot);
 /* supersets are sized to about 10 minutes each (12 at most); solo exercises absorb the rest of the time */
 const SS_TARGET=600,SS_MAX=720;
 function sizePairs(items){
@@ -448,14 +547,15 @@ function fitSets(items,budget){
   // too long: take sets off solo accessories, then solo main lifts, then supersets; never below 2
   while(totalSec(items)>budget){
     const pool=us.filter(u=>sets(u)>2);if(!pool.length)break;
-    const order=[pool.filter(u=>!pair(u)&&!main(u)),pool.filter(u=>!pair(u)),pool];
+    const pw=u=>u.some(i=>POWERISH.has(i.slot)),order=[pool.filter(u=>!pair(u)&&!main(u)&&!pw(u)),pool.filter(u=>!pair(u)),pool];
     const t=order.find(o=>o.length).sort((a,b)=>sets(b)-sets(a))[0];setU(t,sets(t)-1);
   }
   // room left: solo main lifts (up to 5 sets), solo accessories (up to 4), then supersets (up to ~12 min each)
-  const ok=u=>pair(u)?unitSec(u)<=SS_MAX&&sets(u)<=6:sets(u)<=(main(u)?5:4);
+  const ok=u=>pair(u)?unitSec(u)<=SS_MAX&&sets(u)<=(season()==="in"?3:6):sets(u)<=(main(u)?capMain():capAcc());
   let grew=true;
   while(grew){grew=false;
-    for(const group of [us.filter(u=>!pair(u)&&main(u)),us.filter(u=>!pair(u)&&!main(u)),us.filter(pair)]){
+    const pwr=u=>u.some(i=>POWERISH.has(i.slot));
+    for(const group of [us.filter(u=>!pair(u)&&main(u)),us.filter(u=>!pair(u)&&pwr(u)),us.filter(u=>!pair(u)&&!main(u)),us.filter(pair)]){
       for(const u of group.sort((a,b)=>sets(a)-sets(b))){
         setU(u,sets(u)+1);
         if(ok(u)&&totalSec(items)<=budget){grew=true;break}setU(u,sets(u)-1);
@@ -466,7 +566,7 @@ function fitSets(items,budget){
   return items;
 }
 function fitDay(items,budget){return fitSets(sizePairs(items),budget)}
-const REGION={hpush:"push",vpush:"push",tri:"push",hpull:"pull",vpull:"pull",bi:"pull",delt:"pull",squat:"lower",hinge:"lower",single:"lower",post:"lower",calf:"lower",core:"core",power:"power",cond:"cond"};
+const REGION={hpush:"push",vpush:"push",tri:"push",hpull:"pull",vpull:"pull",bi:"pull",delt:"pull",squat:"lower",hinge:"lower",single:"lower",post:"lower",calf:"lower",core:"core",power:"power",cond:"cond",rotpow:"power",speed:"power",agility:"power",jump:"power",arm:"pull",neck:"core"};
 function pairScore(a,b){
   const ra=REGION[a.slot],rb=REGION[b.slot];if(!ra||!rb)return 0;
   if((ra==="push"&&rb==="pull")||(ra==="pull"&&rb==="push"))return 4;
@@ -522,32 +622,38 @@ function normalizeGroups(items){
 function ssLabels(items){const m={};units(items).forEach(u=>{if(u.length>1)u.forEach((it,i)=>m[items.indexOf(it)]=it.group+(i+1))});return m}
 function genItems(type,variant,opts){
   const wk=(opts&&opts.week||1)-1,prev=(opts&&opts.prev)||new Set();
-  const s=S.settings;let slots=[...DAYTYPES[type].slots];
+  const s=S.settings,prof=sportProf(),T=targetMin();let slots=[...DAYTYPES[type].slots];
   // supersets fit more exercises in the same time, so offer a few extra slots to fill it
-  if(s.supersets)slots=slots.concat({upper:["hpull","hpush","core"],lower:["single","post","core"],full:["vpull","single","tri","delt"],push:["vpush","delt","core"],pull:["vpull","bi","core"],legs:["squat","post","core"],cond:["cond","core"]}[type]||[]);
-  if(s.style==="athletic"&&["lower","full","legs"].includes(type))slots.unshift("power");
-  if(!s.minutes)slots=slots.slice(0,{light:4,moderate:5,hard:6}[s.intensity]);
-  const used=new Set(),all=[];
+  if(s.supersets)slots=slots.concat({upper:["hpull","hpush","core"],lower:["single","post","core"],full:["vpull","single","tri","delt"],push:["vpush","delt","core"],pull:["vpull","bi","core"],legs:["squat","post","core"],cond:["cond","core"],armcare:["hpull","core"],speed:["agility","core"],jump:["single","core"]}[type]||[]);
+  // sport work ranks right after the first two main lifts
+  if(prof){const pos=sportPos();let inj=[...(prof.inject[type]||[])];if(pos.swap)inj=inj.map(x=>pos.swap[x]||x);if(inj.length&&pos.extra)inj=inj.concat(pos.extra);slots.splice(2,0,...inj)}
+  if(s.style==="athletic"&&["lower","full","legs"].includes(type))slots.splice(2,0,prof?prof.power:"power");
+  if(!T)slots=slots.slice(0,{light:4,moderate:5,hard:6}[s.intensity]);
+  const used=new Set(),all=[];let ci=0;
   slots.forEach((slot,i)=>{
     let c=candidates(slot).filter(e=>!used.has(e.id));
     if(!c.length&&FALLBACK[slot])c=candidates(FALLBACK[slot]).filter(e=>!used.has(e.id));
     if(!c.length)return;
     // rotation: the first two big lifts change every 4 weeks, other compound lifts every 2 weeks, accessories weekly
-    const compound=!ACCESSORY.has(slot)&&slot!=="power",tier=compound?(i<2?4:2):1,idx=variant+Math.floor(wk/tier);
+    // sport drills stay for 2 weeks so the skill can settle in
+    const compound=!ACCESSORY.has(slot)&&!POWERISH.has(slot),tier=compound?(ci<2?4:2):(POWERISH.has(slot)?2:1),idx=variant+Math.floor(wk/tier);
     let ex=c[idx%c.length];
     // accessories: avoid repeating last week's pick for this day type when another option exists
     if(tier===1&&prev.has(ex.id)){for(let k=1;k<c.length;k++){const o=c[(idx+k)%c.length];if(!prev.has(o.id)){ex=o;break}}}
     used.add(ex.id);
-    all.push({uid:rid(),ex:ex.id,slot,...rx(ex,slot,i),weight:"",note:""});
+    all.push({uid:rid(),ex:ex.id,slot,...rx(ex,slot,compound?ci:9),weight:"",note:""});
+    if(compound)ci++;
   });
-  const arrange=list=>s.supersets?sizePairs(completePairs(pairItems(list))):list;
-  if(!s.minutes)return arrange(all);
-  const budget=s.minutes*60-WARMUP;
+  // explosive work goes first in the session, while fresh
+  const order=list=>list.filter(x=>POWERISH.has(x.slot)).concat(list.filter(x=>!POWERISH.has(x.slot)));
+  const arrange=list=>s.supersets?sizePairs(completePairs(pairItems(order(list)))):order(list);
+  if(!T)return arrange(all);
+  const budget=T*60-WARMUP;
   // pick exercises in priority order while they fit; always keep the first two
   const items=[];let used2=0;
   // size the exercise list at lean set counts so short sessions keep variety; sets grow back afterward if there's room
-  for(const it of all){const trial=items.concat([it]).map(x=>({...x,sets:Math.min(x.sets,isMain(x)?3:2)}));if(items.length<2||totalSec(arrange(trial))<=budget)items.push(it)}
-  let final=s.supersets?completePairs(pairItems(items)):items;
+  for(const it of all){const trial=items.concat([it]).map(x=>({...x,sets:Math.min(x.sets,isMain(x)||POWERISH.has(x.slot)?3:2)}));if(items.length<2||totalSec(arrange(trial))<=budget)items.push(it)}
+  let final=s.supersets?completePairs(pairItems(order(items))):order(items);
   // if completing pairs pushed the day over time, drop whole supersets from the end
   while(s.supersets&&units(final).length>1&&totalSec(sizePairs(final.map(x=>({...x}))))>budget){const us=units(final);final=final.slice(0,final.length-us[us.length-1].length)}
   return fitDay(final,budget);
@@ -730,7 +836,7 @@ function vWeek(){
   const done=new Set(S.sessions.filter(x=>x.date>=S.plan.built).map(x=>x.dayId)),complete=weekDone();
   const signCard=mode!=="cloud"?(FB_READY?(authReady&&!acct?`<div class="card signin-card"><div><h3>Sign in to sync</h3><p class="hint">Use your Google account to keep your plan and history on every device and to share workouts.</p></div><button class="btn primary" data-act="signin">Sign in with Google</button></div>`:""):`<div class="card signin-card"><div><h3>Finish setup</h3><p class="hint">Paste your Firebase settings into firebase-config.js to turn on Google sign-in. Until then, everything saves on this device only.</p></div></div>`):"";
   return `${signCard}${complete?`<div class="card next-wk"><div><h3>Week ${S.plan.week||1} done</h3><p class="hint">Next week keeps your main lifts and rotates in new accessory exercises, using the weights you just lifted.</p></div><button class="btn primary" data-act="nextweek">${icon("redo")}Build week ${(S.plan.week||1)+1}</button></div>`:""}
-  <div class="head-row"><div><h2>Week ${S.plan.week||1}</h2><p class="meta">${s.days} days · ${esc(splitSummary())} · ${s.minutes?s.minutes+" min":"No time limit"}${s.supersets?" · Supersets":""} · ${lbl(INTENSITY,s.intensity)} · ${lbl(STYLES,s.style)}</p></div>
+  <div class="head-row"><div><h2>Week ${S.plan.week||1}</h2><p class="meta">${s.days} days · ${esc(splitSummary())} · ${sportOn()?esc(sportLabel())+" · ":""}${targetMin()?targetMin()+" min":"No time limit"}${s.supersets?" · Supersets":""} · ${lbl(INTENSITY,s.intensity)} · ${lbl(STYLES,s.style)}</p></div>
   <div class="head-btns"><button class="btn" data-act="sharewk">${icon("share")}Share week</button><button class="btn" data-act="import">${icon("plus")}Add shared workout</button><button class="btn" data-act="rebuild">${icon("redo")}Rebuild unlocked days</button></div></div>
   ${S.plan.days.map((d,di)=>`<article class="card day" data-day="${di}">
     <div class="day-h">${typeChip(d.type)}
@@ -760,7 +866,7 @@ function vWeek(){
 }
 
 function timeChip(d){
-  const m=dayMinutes(d.items),target=S.settings.minutes,off=target&&Math.abs(m-target)>5;
+  const m=dayMinutes(d.items),target=targetMin(),off=target&&Math.abs(m-target)>5;
   return `<span class="est${off?" off":""}">≈ ${m} min</span>${off&&d.items.length?`<button class="btn ghost sm" data-act="fit">Fit to ${target} min</button>`:""}`;
 }
 function nextDayIndex(){
@@ -834,9 +940,13 @@ function vSetup(){
   return `<div class="head-row"><div><h2>Setup</h2><p class="meta">Change anything here, then rebuild. Locked days stay as they are.</p></div>
     <button class="btn primary" data-act="rebuild">${icon("redo")}Rebuild my week</button></div>
   <section class="card">
+    <div class="field"><span class="lbl">Sport</span>${seg("sport",[["none","None"]].concat(Object.entries(PROFILES).map(([k,p])=>[k,p.label])),sportOn()?s.sport:"none")}
+      ${sportOn()?`${sportProf().positions?`<span class="lbl">Position</span>${seg("position",sportProf().positions,s.position||sportProf().positions[0][0])}`:""}
+      <span class="lbl">Season</span>${seg("season",SEASONS,season())}
+      <p class="hint">${esc(sportProf().hint)} ${esc(sportPos().hint||"")} ${esc(SEASON_HINT[season()])}</p>`:`<p class="hint">Pick a sport to add sport-specific training like rotational power, sprints, jumps and arm care.</p>`}</div>
     <div class="field"><span class="lbl">Days per week</span>${seg("days",[2,3,4,5,6].map(n=>[n,n+" days"]),s.days)}</div>
     <div class="field"><span class="lbl">Split</span>
-      <div class="seg">${(PRESETS[s.days]||[]).map(([name,arr])=>`<button data-act="preset" data-val="${arr.join(",")}" aria-pressed="${arr.join()===s.split.join()}">${name}</button>`).join("")}</div>
+      <div class="seg">${presetsFor(s.days).map(([name,arr])=>`<button data-act="preset" data-val="${arr.join(",")}" aria-pressed="${arr.join()===s.split.join()}">${name}</button>`).join("")}</div>
       <p class="hint">Or set each day yourself:</p>
       <div class="split-days">${s.split.map((t,i)=>`<label class="split-day">${typeChip(t)}<span class="meta" style="margin:0">Day ${i+1}</span>
         <select data-field="splitday" data-i="${i}" aria-label="Day ${i+1} type">${Object.entries(DAYTYPES).map(([k,d])=>`<option value="${k}"${k===t?" selected":""}>${d.label}</option>`).join("")}</select></label>`).join("")}</div></div>
@@ -871,8 +981,8 @@ function vLibrary(){
     <button class="btn" data-act="newex">${icon("plus")}Add your own</button></div>
   <input class="inp" id="lib-q" data-field="libq" placeholder="Search exercises" value="${esc(S.libQ||"")}" aria-label="Search exercises">
   <div class="filters">${[["all","All"],...Object.entries(SLOTS)].map(([k,l])=>`<button class="chip" data-act="libf" data-val="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}</div>
-  <div class="card">${list.map(e=>{const ok=hasEquip(e),fl=flags(e),custom=(S.lib.links||{})[e.id];return `<div class="lib-row${ok&&!fl.length?"":" unavail"}" data-ex="${e.id}">
-    <div class="ex"><div style="font-weight:600">${esc(e.name)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span class="tag">${SLOTS[e.slot]}</span>${!ok?'<span class="tag">Needs equipment</span>':""}${fl.length?`<span class="tag warn">Flagged: ${fl.map(x=>lbl(LIMITS,x)).join(", ")}</span>`:""}${custom||e.link?'<span class="tag">Your link</span>':""}${e.custom?'<span class="tag">Yours</span>':""}</div></div>
+  <div class="card">${list.map(e=>{const ok=hasEquip(e),fl=flags(e),sb=sportBlocked(e),custom=(S.lib.links||{})[e.id];return `<div class="lib-row${ok&&!fl.length&&!sb?"":" unavail"}" data-ex="${e.id}">
+    <div class="ex"><div style="font-weight:600">${esc(e.name)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span class="tag">${SLOTS[e.slot]}</span>${!ok?'<span class="tag">Needs equipment</span>':""}${sb?`<span class="tag warn">${esc(sportPos().avoidLabel||"Skipped for your sport")}</span>`:""}${fl.length?`<span class="tag warn">Flagged: ${fl.map(x=>lbl(LIMITS,x)).join(", ")}</span>`:""}${custom||e.link?'<span class="tag">Your link</span>':""}${e.custom?'<span class="tag">Yours</span>':""}</div></div>
     <a class="how" href="${esc(howUrl(e))}" target="_blank" rel="noopener">${icon("video")}How to</a>
     <button class="iconbtn" data-act="editlink" aria-label="Edit link for ${esc(e.name)}">${icon("edit")}</button></div>`}).join("")||'<div class="empty">No exercises match.</div>'}</div>`;
 }
@@ -993,8 +1103,8 @@ function openPicker(title,slot,act){
 }
 function pickerList(q){
   const {slot}=S.sheetCtx;q=q.toLowerCase();const all=allEx();
-  let list=q?all.filter(e=>e.name.toLowerCase().includes(q)):all.filter(e=>!slot||e.slot===slot);
-  const score=e=>(hasEquip(e)&&!flags(e).length?0:1);
+  let list=q?all.filter(e=>e.name.toLowerCase().includes(q)):all.filter(e=>!slot||fitsSlot(e,slot));
+  const score=e=>(hasEquip(e)&&!flags(e).length&&!sportBlocked(e)?0:1);
   return list.sort((a,b)=>score(a)-score(b));
 }
 
@@ -1059,8 +1169,8 @@ document.addEventListener("click",e=>{
     case "copybk":copyText($("#bk-text").value,$("#bk-text"),"Backup copied.");break;
     case "dorestore":doRestore(t);break;
     case "lock":day.locked=!day.locked;save("plan");render();break;
-    case "fit":{const before=dayMinutes(day.items);fitDay(day.items,S.settings.minutes*60-WARMUP);save("plan");render();const after=dayMinutes(day.items);
-      toast(Math.abs(after-S.settings.minutes)>5?`Adjusted sets: ≈ ${after} min. Add or remove an exercise to get closer.`:`Adjusted sets: ${before} → ${after} min.`);break}
+    case "fit":{const before=dayMinutes(day.items);fitDay(day.items,targetMin()*60-WARMUP);save("plan");render();const after=dayMinutes(day.items);
+      toast(Math.abs(after-targetMin())>5?`Adjusted sets: ≈ ${after} min. Add or remove an exercise to get closer.`:`Adjusted sets: ${before} → ${after} min.`);break}
     case "regen":{const v=(day.v||0)+1;day.v=v;day.items=genItems(day.type,v,{week:S.plan.week||1});save("plan");render();toast("New exercises for "+day.name);break}
     case "start":startDay(di);break;
     case "up":case "down":{const j=act==="up"?ii-1:ii+1;if(j<0||j>=day.items.length)break;[day.items[ii],day.items[j]]=[day.items[j],day.items[ii]];normalizeGroups(day.items);save("plan");render();break}
@@ -1082,10 +1192,14 @@ document.addEventListener("click",e=>{
       <button class="btn primary" data-act="saveedit">Save</button>`);break}
     case "saveedit":{const {di:d,ii:i}=S.sheetCtx,it=S.plan.days[d].items[i];it.sets=Math.max(1,Math.min(12,parseInt($("#e-sets").value)||it.sets));it.reps=$("#e-reps").value.trim()||it.reps;it.weight=$("#e-w").value.trim();it.rest=parseInt($("#e-rest").value)||90;it.note=$("#e-note").value.trim();save("plan");closeSheet();render();break}
     case "set":{const f=t.dataset.field;let v=t.dataset.val;const s=S.settings;
-      if(f==="days"){v=+v;const p=(PRESETS[v]||[])[0];s.split=p?[...p[1]]:Array(v).fill("full");}
+      if(f==="days"){v=+v;const p=presetsFor(v)[0];s.split=p?[...p[1]]:Array(v).fill("full");}
+      let msg="";
+      if(f==="sport"){const p=PROFILES[v];if(!p)v="none";s.position=p&&p.positions?p.positions[0][0]:null;s.season=s.season||"off";
+        const sp=p&&(SPORT_PRESETS[v]||{})[s.days];if(sp){s.split=[...sp[1]];msg=` Split set to ${sp[0]}.`}
+        msg=(p?p.label+" training on.":"Sport training off.")+msg+" Tap Rebuild my week to apply."}
       if(f==="minutes")v=+v;
       if(f==="supersets")v=v==="on";
-      s[f]=v;save("settings");render();break}
+      s[f]=v;save("settings");render();if(msg)toast(msg);break}
     case "addeq":addOtherEquip();break;
     case "deleq":S.settings.otherEquip.splice(+t.dataset.val,1);save("settings");render();break;
     case "toggle":{const f=t.dataset.field,v=t.dataset.val,arr=S.settings[f];const k=arr.indexOf(v);k<0?arr.push(v):arr.splice(k,1);save("settings");render();break}
