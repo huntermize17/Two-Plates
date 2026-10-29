@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each person's plan, settings, library and workout history.
+    // Only the signed-in owner can read or write their own data.
+    match /data/users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Shared workouts: any signed-in user can open one by its code.
+    // Only the person who shared it can create, change or delete it.
+    match /shares/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.from == request.auth.uid
+                    && request.resource.size() < 200000;
+      allow update, delete: if request.auth != null
+                            && resource.data.from == request.auth.uid;
+    }
+  }
+}
