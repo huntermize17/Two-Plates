@@ -104,6 +104,20 @@ h3{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size
 .imp-prev{padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:.88rem}
 .imp-prev ul{margin:4px 0 0;padding-left:18px}
 .imp-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.max-list{display:flex;flex-direction:column;gap:6px}
+.max-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.max-row:last-child{border-bottom:0}
+.max-name{font-weight:600;min-width:0}
+.max-in{display:flex;align-items:center;gap:6px}
+.max-in .inp{font-family:var(--mono);width:84px;padding:6px 8px}
+.max-act{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.cycle{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.cyc{display:flex;flex-direction:column;gap:2px;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums}
+.cyc strong{font-family:var(--body);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cyc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.est-out{font-family:var(--display);font-weight:800;font-size:1.6rem;margin:0}
+.maxes-card{border-color:var(--accent)}
+.maxes-card h3{color:var(--accent)}
 .locked-tag{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);font-weight:600}
 ol.items{list-style:none;margin:0;padding:0}
 .item{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
@@ -436,6 +450,12 @@ const WARMUP=300;
 const ALSO={"mb-rot-throw":["rotpow"],"lm-rot-press":["rotpow"],"landmine-rot":["rotpow"],"pull-apart":["arm"],"face-pull":["arm"],"ytw":["arm"],"box-jump":["jump"],"broad-jump":["jump"],"jump-squat":["jump"]};
 /* sport training: inject = movement types added to each day type (priority right after the first two main lifts) */
 const SEASONS=[["off","Off-season"],["pre","Pre-season"],["in","In-season"]];
+const AGES=[["youth","Youth"],["hs","High School"],["college","College / Pro"]];
+const AGE_HINT={youth:"Youth plans focus on technique with lighter weights and higher reps: up to 3 sets, workouts capped at 45 minutes, no Olympic lifts or depth drops, and no max percentages.",hs:"High school plans use the full exercise list, with percentage work capped at 85% of max.",college:"College / Pro plans use the full program, including the heaviest percentage weeks."};
+const YOUTH_AVOID=["power-clean","hang-clean","depth-drop","good-morning","zercher-squat","sb-clean","pause-front-squat","nordic","tuck-jump","bb-complex"];
+const YOUTH_PREFER=["goblet-squat","bw-squat","pushup","inverted-row","walking-lunge","step-up","sl-rdl","broad-jump","pogo","band-row","plank","dead-bug","lateral-lunge","kb-swing"];
+function ageGroup(){return sportOn()?(S.settings.age||"college"):"college"}
+function isYouth(){return ageGroup()==="youth"}
 const SEASON_HINT={off:"Off-season builds strength and size.",pre:"Pre-season drops main lifts to lower reps and adds more power and speed work.",in:"In-season uses fewer sets and keeps workouts to 45 minutes or less so you stay fresh for games."};
 const PROFILES={
   baseball:{label:"Baseball / Softball",power:"rotpow",
@@ -469,14 +489,78 @@ function sportOn(){const s=S.settings;return !!(s&&s.sport&&PROFILES[s.sport])}
 function sportProf(){return sportOn()?PROFILES[S.settings.sport]:null}
 function sportPos(){const p=sportProf();return p&&p.pos?(p.pos[S.settings.position]||{}):{}}
 function season(){return sportOn()?(S.settings.season||"off"):"off"}
-function sportAvoid(){return new Set(sportPos().avoid||[])}
+function sportAvoid(){return new Set((sportPos().avoid||[]).concat(isYouth()?YOUTH_AVOID:[]))}
+function blockReason(e){return isYouth()&&YOUTH_AVOID.includes(e.id)?"Not in youth plans":(sportPos().avoidLabel||"Skipped for your sport")}
 function sportBlocked(e){return sportAvoid().has(e.id)}
-function sportLabel(){const p=sportProf();if(!p)return "";const pos=p.positions&&p.positions.find(x=>x[0]===S.settings.position);return [p.label,pos&&pos[1].replace(/ \(.*\)/,""),lbl(SEASONS,season())].filter(Boolean).join(" · ")}
+function sportLabel(){const p=sportProf();if(!p)return "";const pos=p.positions&&p.positions.find(x=>x[0]===S.settings.position);return [p.label,pos&&pos[1].replace(/ \(.*\)/,""),lbl(AGES,ageGroup()),lbl(SEASONS,season())].filter(Boolean).join(" · ")}
 function presetsFor(days){const p=sportProf(),sp=p&&(SPORT_PRESETS[S.settings.sport]||{})[days];return (sp?[[p.label.split(" /")[0]+": "+sp[0],sp[1]]]:[]).concat(PRESETS[days]||[])}
 /* in-season sessions are capped at 45 minutes */
-function targetMin(){const m=S.settings.minutes;return season()==="in"?(m?Math.min(m,45):45):m}
-function capMain(){return {off:5,pre:4,in:3}[season()]}
-function capAcc(){return season()==="in"?3:4}
+function targetMin(){const m=S.settings.minutes;return season()==="in"||isYouth()?(m?Math.min(m,45):45):m}
+function capMain(){return isYouth()?3:{off:5,pre:4,in:3}[season()]}
+function capAcc(){return season()==="in"||isYouth()?3:4}
+/* ---------- maxes & percentage cycles ----------
+   Lifts with a 1-rep max follow a cycle of 3, 4 or 6 weeks: build weeks, then a lighter week.
+   The 4-week tables below are the base; other lengths are spread from the same start, peak and lighter week.
+   Each entry is [fraction of max, reps]. */
+const PCT_TABLES={
+  strength:[[.70,5],[.775,4],[.85,3],[.60,5]],
+  athletic:[[.70,5],[.775,4],[.85,3],[.60,5]],
+  muscle:[[.65,10],[.70,8],[.75,6],[.55,10]],
+  general:[[.65,8],[.70,6],[.75,5],[.55,8]],
+  pre:[[.725,4],[.80,3],[.875,2],[.65,3]],
+  in:[[.70,3],[.75,3],[.80,2],[.60,3]],
+  power:[[.70,3],[.75,3],[.80,2],[.65,3]]
+};
+const MAX_DEFAULTS=["back-squat","front-squat","deadlift","bench","ohp","power-clean","tb-deadlift"];
+const LOWER_SLOTS=new Set(["squat","hinge","single","post"]);
+let GENWEEK=0,LASTBUMP=null;
+function curWeek(){return GENWEEK||(S.plan&&S.plan.week)||1}
+function cycLen(){const L=+S.settings.cycleLen;return [3,4,6].includes(L)?L:4}
+function cycleWk(){return (curWeek()-1)%cycLen()}
+function isLightWk(){return cycleWk()===cycLen()-1}
+function maxOf(id){const m=(S.settings.maxes||{})[id];return m>0?m:0}
+function pctActive(){return S.settings.pctOn!==false&&!isYouth()}
+function baseTable(slot){const sea=season();if(slot==="power")return PCT_TABLES.power;if(sea!=="off")return PCT_TABLES[sea];return PCT_TABLES[S.settings.style]||PCT_TABLES.strength}
+/* spread the build weeks evenly from the start to the peak; a 6-week cycle starts a little lighter and peaks a little heavier */
+function pctTable(slot){
+  const b=baseTable(slot),L=cycLen();if(L===4)return b;
+  const n=L-1,a=b[0][0]+(L===6?-.025:.025),z=b[2][0]+(L===6?.025:0),ra=b[0][1],rz=b[2][1];
+  const out=[];for(let i=0;i<n;i++){const t=n===1?1:i/(n-1);out.push([Math.round((a+(z-a)*t)*40)/40,Math.round(ra+(rz-ra)*t)])}
+  out.push(b[3]);return out;
+}
+function pctCap(){return ageGroup()==="hs"?.85:1}
+function roundW(w){const step=S.settings.unit==="kg"?2.5:5;return Math.round(w/step)*step}
+/* the plan's numbers for an item: percentage lifts take their reps and weight from the cycle */
+function eff(it){
+  const max=maxOf(it.ex);
+  if(!max||!pctActive()||!(it.main||it.slot==="power"))return {sets:it.sets,reps:it.reps,w:it.weight||"",pct:0};
+  const row=pctTable(it.slot)[cycleWk()],pct=Math.min(row[0],pctCap());
+  return {sets:isLightWk()?Math.min(it.sets,3):it.sets,reps:String(row[1]),w:String(roundW(max*pct)),pct};
+}
+function e1rm(w,r){w=parseFloat(w);r=parseInt(r);if(!(w>0)||!(r>0)||r>10)return 0;return r===1?w:w*(1+r/30)}
+function bestFromLogs(id){let b=0;S.sessions.forEach(x=>x.items.forEach(it=>{if(it.ex===id)it.sets.forEach(st=>{b=Math.max(b,e1rm(st.w,st.r))})}));return b?roundW(b):0}
+function maxList(){
+  const ids=[];const add=id=>{if(id&&!ids.includes(id)&&exById(id))ids.push(id)};
+  Object.keys(S.settings.maxes||{}).forEach(add);
+  ((S.plan&&S.plan.days)||[]).forEach(d=>d.items.forEach(it=>{const e=exById(it.ex);if((it.main||it.slot==="power")&&e&&/bb|lm|tb/.test(e.req))add(it.ex)}));
+  // suggest the big barbell lifts until there are a few to fill in
+  MAX_DEFAULTS.forEach(id=>{const e=exById(id);if(ids.length<6&&e&&hasEquip(e)&&!sportBlocked(e))add(id)});
+  return ids;
+}
+/* end of a cycle: raise a max when every logged set in the last heavy week hit its target reps and weight */
+function bumpMaxes(wk3){
+  const s=S.settings,res={up:[],held:[]};if(s.autoBump===false)return res;
+  Object.keys(s.maxes||{}).forEach(id=>{
+    const sets=[];S.sessions.forEach(x=>{if(x.week===wk3)x.items.forEach(it=>{if(it.ex===id&&it.tr)it.sets.forEach(st=>sets.push([st,it]))})});
+    const ex=exById(id);if(!ex)return;
+    if(!sets.length){res.held.push(ex.name);return}
+    const ok=sets.every(([st,it])=>(parseInt(st.r)||0)>=(parseInt(it.tr)||0)&&(parseFloat(st.w)||0)>=(parseFloat(it.tw)||0)*.98);
+    if(ok){const inc=S.settings.unit==="kg"?(LOWER_SLOTS.has(ex.slot)?5:2.5):(LOWER_SLOTS.has(ex.slot)?10:5);s.maxes[id]=maxOf(id)+inc;res.up.push(ex.name)}else res.held.push(ex.name);
+  });
+  if(res.up.length)save("settings");
+  return res;
+}
+function bumpMsg(){const b=LASTBUMP;LASTBUMP=null;if(!b)return "";return (b.up.length?` Maxes raised: ${b.up.join(", ")}.`:"")+(b.held.length?` Holding: ${b.held.join(", ")}.`:"")}
 const DEFAULT_SETTINGS={days:4,split:["upper","lower","upper","lower"],minutes:60,intensity:"moderate",style:"strength",equip:["bb","rk","bn"],limits:[],unit:"lb"};
 const S={settings:null,plan:null,lib:{custom:[],links:{}},active:null,sessions:[]};
 let tab="week", mode="local", db=null, uid=null, timerState=null, needsRender=false;
@@ -500,7 +584,7 @@ function hasEquip(ex,eq){const set=eq?new Set(eq):equipSet();return ex.req.split
 function flags(ex){return ex.avoid.filter(a=>S.settings.limits.includes(a))}
 function fitsSlot(e,slot){return e.slot===slot||(ALSO[e.id]||[]).includes(slot)}
 function candidates(slot){
-  const av=sportAvoid(),p=sportProf(),pref=p?p.prefer:[];
+  const av=sportAvoid(),p=sportProf(),pref=(isYouth()?YOUTH_PREFER:[]).concat(p?p.prefer:[]);
   const list=allEx().filter(e=>fitsSlot(e,slot)&&hasEquip(e)&&!flags(e).length&&!av.has(e.id));
   if(!pref.length)return list;
   // the sport's preferred exercises come first, so week 1 picks them and rotation moves on from there
@@ -520,11 +604,12 @@ function rx(ex,slot,i){
   if(ex.timed)reps=slot==="cond"?"40s":"30s";
   if(pw)sets=sea==="pre"?4:3;
   if(sea==="in")sets=Math.min(sets,main?3:2);
+  if(isYouth()){sets=Math.min(sets,3);if(!pw&&!ex.timed&&!SPR[slot])reps=main?"8":"10";if(slot==="power")reps="5"}
   const rest=pw?(slot==="power"?120:90):main?(s.style==="strength"?150:120):(slot==="cond"?45:(slot==="arm"||slot==="neck")?45:60);
   return {sets,reps,rest};
 }
 /* time estimate: each set = working time + rest, plus a minute to change exercises; warm-up added per day */
-function workSec(it){return /s$/i.test(String(it.reps))?(parseInt(it.reps)||30):Math.max(20,(parseInt(it.reps)||8)*4)}
+function workSec(it){const r=eff(it).reps;return /s$/i.test(String(r))?(parseInt(r)||30):Math.max(20,(parseInt(r)||8)*4)}
 function estSec(it){return it.sets*(workSec(it)+(it.rest||60))+60}
 /* supersets: members are done back to back (or split between partners), so rest overlaps with the other exercise */
 function units(items){const u=[];items.forEach(it=>{const last=u[u.length-1];if(it.group&&last&&last[0].group===it.group)last.push(it);else u.push([it])});return u}
@@ -636,12 +721,14 @@ function genItems(type,variant,opts){
     if(!c.length)return;
     // rotation: the first two big lifts change every 4 weeks, other compound lifts every 2 weeks, accessories weekly
     // sport drills stay for 2 weeks so the skill can settle in
-    const compound=!ACCESSORY.has(slot)&&!POWERISH.has(slot),tier=compound?(ci<2?4:2):(POWERISH.has(slot)?2:1),idx=variant+Math.floor(wk/tier);
+    const compound=!ACCESSORY.has(slot)&&!POWERISH.has(slot),tier=compound?(ci<2?cycLen():2):(POWERISH.has(slot)?2:1),idx=variant+Math.floor(wk/tier);
     let ex=c[idx%c.length];
+    // lifts with a max stay put so the percentage cycle can build on them
+    if(compound&&ci<2&&pctActive()){const mx=c.filter(e=>maxOf(e.id));if(mx.length)ex=mx[variant%mx.length]}
     // accessories: avoid repeating last week's pick for this day type when another option exists
     if(tier===1&&prev.has(ex.id)){for(let k=1;k<c.length;k++){const o=c[(idx+k)%c.length];if(!prev.has(o.id)){ex=o;break}}}
     used.add(ex.id);
-    all.push({uid:rid(),ex:ex.id,slot,...rx(ex,slot,compound?ci:9),weight:"",note:""});
+    all.push({uid:rid(),ex:ex.id,slot,...rx(ex,slot,compound?ci:9),weight:"",note:"",main:compound&&ci<2});
     if(compound)ci++;
   });
   // explosive work goes first in the session, while fresh
@@ -667,6 +754,10 @@ function weekDone(){
 /* advance=true starts the next training week: main lifts stay for 4-week blocks so you can progress them, accessories rotate every week */
 function buildWeek(keepLocked,advance){
   const s=S.settings,old=(S.plan&&S.plan.days)||[],week=((S.plan&&S.plan.week)||1)+(advance?1:0);
+  LASTBUMP=null;if(advance&&S.plan&&S.plan.week%cycLen()===0&&Object.keys(s.maxes||{}).length)LASTBUMP=bumpMaxes(S.plan.week-1);
+  GENWEEK=week;try{return buildWeekInner(keepLocked,advance,s,old,week)}finally{GENWEEK=0}
+}
+function buildWeekInner(keepLocked,advance,s,old,week){
   const prevByType={};old.forEach(d=>d.items.forEach(it=>{(prevByType[d.type]=prevByType[d.type]||new Set()).add(it.ex)}));
   const lastW={};old.forEach(d=>d.items.forEach(it=>{if(it.weight)lastW[it.ex]=it.weight}));
   let changed=0;
@@ -804,6 +895,7 @@ document.addEventListener("focusout",()=>{if(needsRender){needsRender=false;setT
 function ensureDefaults(){
   if(!S.settings)S.settings=clone(DEFAULT_SETTINGS);
   if(S.settings.minutes===undefined)S.settings.minutes=60;
+  if(!S.settings.maxes)S.settings.maxes={};
   if(!S.lib)S.lib={custom:[],links:{}};S.lib.custom=S.lib.custom||[];S.lib.links=S.lib.links||{};
   if(!S.plan||!S.plan.days)buildWeek(false);
 }
@@ -811,7 +903,7 @@ function ensureDefaults(){
 /* ---------- helpers ---------- */
 const icon=(n,cls="icon")=>`<svg class="${cls}"><use href="#i-${n}"/></svg>`;
 function typeChip(type,sz){return `<span class="plate t-${type}"${sz?` style="width:${sz}px;height:${sz}px"`:""} aria-hidden="true">${DAYTYPES[type].ab}</span>`}
-function rxText(it){const w=it.weight?` · ${esc(it.weight)} ${S.settings.unit}`:"";return `${it.sets} × ${esc(it.reps)}${w}`}
+function rxText(it){const e=eff(it),w=e.w?` · ${esc(e.w)} ${S.settings.unit}`:"";return `${e.sets} × ${esc(e.reps)}${e.pct?` @ ${+(e.pct*100).toFixed(1)}%`:""}${w}`}
 function platesFor(w){
   w=parseFloat(w);if(!(w>=45))return "";let side=(w-45)/2;if(side<=0)return "Empty bar";
   const out=[];for(const p of [45,35,25,10,5,2.5]){while(side>=p-1e-9){out.push(p);side-=p}}
@@ -835,8 +927,9 @@ function vWeek(){
   const s=S.settings;
   const done=new Set(S.sessions.filter(x=>x.date>=S.plan.built).map(x=>x.dayId)),complete=weekDone();
   const signCard=mode!=="cloud"?(FB_READY?(authReady&&!acct?`<div class="card signin-card"><div><h3>Sign in to sync</h3><p class="hint">Use your Google account to keep your plan and history on every device and to share workouts.</p></div><button class="btn primary" data-act="signin">Sign in with Google</button></div>`:""):`<div class="card signin-card"><div><h3>Finish setup</h3><p class="hint">Paste your Firebase settings into firebase-config.js to turn on Google sign-in. Until then, everything saves on this device only.</p></div></div>`):"";
-  return `${signCard}${complete?`<div class="card next-wk"><div><h3>Week ${S.plan.week||1} done</h3><p class="hint">Next week keeps your main lifts and rotates in new accessory exercises, using the weights you just lifted.</p></div><button class="btn primary" data-act="nextweek">${icon("redo")}Build week ${(S.plan.week||1)+1}</button></div>`:""}
-  <div class="head-row"><div><h2>Week ${S.plan.week||1}</h2><p class="meta">${s.days} days · ${esc(splitSummary())} · ${sportOn()?esc(sportLabel())+" · ":""}${targetMin()?targetMin()+" min":"No time limit"}${s.supersets?" · Supersets":""} · ${lbl(INTENSITY,s.intensity)} · ${lbl(STYLES,s.style)}</p></div>
+  const cyc=pctActive()&&Object.keys(s.maxes||{}).length,cw=cycleWk(),cycEnd=cyc&&isLightWk();
+  return `${signCard}${complete?`<div class="card next-wk"><div><h3>Week ${S.plan.week||1} done</h3><p class="hint">${cycEnd?`That finishes your ${cycLen()}-week cycle. ${s.autoBump===false?"Your maxes stay the same.":`Maxes go up for lifts where you hit every rep in week ${cycLen()-1}.`} `:""}Next week keeps your main lifts and rotates in new accessory exercises, using the weights you just lifted.</p></div><button class="btn primary" data-act="nextweek">${icon("redo")}Build week ${(S.plan.week||1)+1}</button></div>`:""}
+  <div class="head-row"><div><h2>Week ${S.plan.week||1}</h2><p class="meta">${s.days} days · ${esc(splitSummary())} · ${sportOn()?esc(sportLabel())+" · ":""}${cyc?`Cycle week ${cw+1} of ${cycLen()}${isLightWk()?" (lighter)":""} · `:""}${targetMin()?targetMin()+" min":"No time limit"}${s.supersets?" · Supersets":""} · ${lbl(INTENSITY,s.intensity)} · ${lbl(STYLES,s.style)}</p></div>
   <div class="head-btns"><button class="btn" data-act="sharewk">${icon("share")}Share week</button><button class="btn" data-act="import">${icon("plus")}Add shared workout</button><button class="btn" data-act="rebuild">${icon("redo")}Rebuild unlocked days</button></div></div>
   ${S.plan.days.map((d,di)=>`<article class="card day" data-day="${di}">
     <div class="day-h">${typeChip(d.type)}
@@ -890,7 +983,7 @@ function vTrain(){
     const lab=ssLabels(a.items)[ii],grp=lab?a.items.filter(x=>x.group===it.group).map((x,k)=>it.group+(k+1)):[];
     return `${lab&&lab.endsWith("1")?`<div class="ss-h"><h3>Superset ${it.group}</h3><p class="hint">Do ${grp.join(" and ")} back to back, then rest. With a partner, one of you starts on ${grp[0]} while the other does ${grp[1]}, then swap.</p></div>`:""}<section class="card tx${lab?" ss":""}" data-titem="${ii}">
       <div class="exname">${lab?`<span class="ssl">${lab}</span>`:""}${esc(ex.name)} <a class="how" href="${esc(howUrl(ex))}" target="_blank" rel="noopener">${icon("video")}How to</a></div>
-      <div class="rx">Target ${it.target.sets} × ${esc(it.target.reps)}${it.target.weight?" @ "+esc(it.target.weight)+" "+S.settings.unit:""}</div>
+      <div class="rx">Target ${it.target.sets} × ${esc(it.target.reps)}${it.target.weight?" @ "+esc(it.target.weight)+" "+S.settings.unit:""}${it.target.pct?` (${+(it.target.pct*100).toFixed(1)}% of max)`:""}</div>
       ${last?`<div class="last">Last (${fmtDate(last.date)}): ${last.sets.map(s=>(s.w?s.w+"×":"")+s.r).join(", ")}</div>`:""}
       ${it.note?`<div class="note">${esc(it.note)}</div>`:""}
       <table class="sets"><thead><tr><th>Set</th><th>${S.settings.unit}</th><th>Reps</th><th></th></tr></thead><tbody>
@@ -939,11 +1032,13 @@ function vSetup(){
   const multi=(field,opts,vals)=>`<div class="seg">${opts.map(([k,l])=>`<button data-act="toggle" data-field="${field}" data-val="${k}" aria-pressed="${vals.includes(k)}">${l}</button>`).join("")}</div>`;
   return `<div class="head-row"><div><h2>Setup</h2><p class="meta">Change anything here, then rebuild. Locked days stay as they are.</p></div>
     <button class="btn primary" data-act="rebuild">${icon("redo")}Rebuild my week</button></div>
+  <section class="card maxes-card" id="maxes">${vMaxes()}</section>
   <section class="card">
     <div class="field"><span class="lbl">Sport</span>${seg("sport",[["none","None"]].concat(Object.entries(PROFILES).map(([k,p])=>[k,p.label])),sportOn()?s.sport:"none")}
       ${sportOn()?`${sportProf().positions?`<span class="lbl">Position</span>${seg("position",sportProf().positions,s.position||sportProf().positions[0][0])}`:""}
+      <span class="lbl">Age group</span>${seg("age",AGES,ageGroup())}
       <span class="lbl">Season</span>${seg("season",SEASONS,season())}
-      <p class="hint">${esc(sportProf().hint)} ${esc(sportPos().hint||"")} ${esc(SEASON_HINT[season()])}</p>`:`<p class="hint">Pick a sport to add sport-specific training like rotational power, sprints, jumps and arm care.</p>`}</div>
+      <p class="hint">${esc(sportProf().hint)} ${esc(sportPos().hint||"")} ${esc(SEASON_HINT[season()])}</p><p class="hint">${esc(AGE_HINT[ageGroup()])}</p>`:`<p class="hint">Pick a sport to add sport-specific training like rotational power, sprints, jumps and arm care.</p>`}</div>
     <div class="field"><span class="lbl">Days per week</span>${seg("days",[2,3,4,5,6].map(n=>[n,n+" days"]),s.days)}</div>
     <div class="field"><span class="lbl">Split</span>
       <div class="seg">${presetsFor(s.days).map(([name,arr])=>`<button data-act="preset" data-val="${arr.join(",")}" aria-pressed="${arr.join()===s.split.join()}">${name}</button>`).join("")}</div>
@@ -974,6 +1069,34 @@ function addOtherEquip(){
   for(const p of parts){if(!s.otherEquip.some(x=>x.toLowerCase()===p.toLowerCase()))s.otherEquip.push(p.slice(0,40))}
   save("settings");render();const n=$("#oe-in");if(n)n.focus();toast("Added. Rebuild your week to use it.");
 }
+function vMaxes(){
+  const s=S.settings,u=s.unit,cw=cycleWk(),t=pctTable("squat"),seg=(field,opts,val)=>`<div class="seg">${opts.map(([k,l])=>`<button data-act="set" data-field="${field}" data-val="${k}" aria-pressed="${String(val)===String(k)}">${l}</button>`).join("")}</div>`;
+  if(isYouth())return `<div class="field"><h3>Maxes</h3><p class="hint">Youth plans don't use max percentages. They build technique with lighter weights instead. Switch the age group to High School or College / Pro to use maxes.</p></div>`;
+  const rows=maxList().map(id=>{const e=exById(id),m=maxOf(id),b=bestFromLogs(id);return `<div class="max-row" data-ex="${id}">
+    <label for="max-${id}" class="max-name">${esc(e.name)}</label>
+    <span class="max-in"><input class="inp" id="max-${id}" data-field="max" data-ex="${id}" inputmode="decimal" placeholder="—" value="${m||""}"><span class="meta">${u}</span></span>
+    <span class="max-act"><button class="btn ghost sm" data-act="estmax">Estimate</button>${b&&b>m?`<button class="btn ghost sm" data-act="usemax" data-val="${b}" title="Use the best estimate from your logged sets">Use ${b}</button>`:""}</span></div>`}).join("");
+  const opts=allEx().filter(e=>!maxList().includes(e.id)&&!e.timed&&!["core","cond","arm","speed","agility","jump"].includes(e.slot)).sort((a,b)=>a.name.localeCompare(b.name));
+  return `<div class="field"><h3>Maxes</h3>
+    ${seg("pctOn",[["on","Use percentages"],["off","Off"]],s.pctOn===false?"off":"on")}
+    <p class="hint">Enter a 1-rep max for your main lifts. Those lifts stay in your plan and follow a cycle of build weeks, then a lighter week. Weights are rounded to the nearest ${u==="kg"?"2.5 kg":"5 lb"}.</p>
+    <div class="max-list">${rows}</div>
+    <div class="code-row"><select class="inp" id="max-add" aria-label="Add a lift"><option value="">Add another lift…</option>${opts.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join("")}</select><button class="btn sm" data-act="addmax">${icon("plus")}Add</button></div>
+    <span class="lbl">Cycle length</span>${seg("cycleLen",[[3,"3 weeks"],[4,"4 weeks"],[6,"6 weeks"]],cycLen())}
+    <p class="hint">${{3:"Short waves: 2 build weeks, then a lighter week. Good in-season or when you want to test progress often.",4:"The standard: 3 build weeks, then a lighter week.",6:"Longer, slower build: 5 build weeks, then a lighter week. Good for experienced lifters."}[cycLen()]}</p>
+    <div class="cycle">${t.map((r,i)=>`<span class="cyc${pctActive()&&i===cw?" on":""}"><strong>Week ${i+1}${i===t.length-1?" (lighter)":""}</strong>${+(Math.min(r[0],pctCap())*100).toFixed(1)}% × ${r[1]}</span>`).join("")}</div>
+    <p class="hint">Your current cycle week is highlighted. ${season()!=="off"?"Percentages follow your season. ":""}${ageGroup()==="hs"?"High school plans cap at 85%. ":""}Power cleans use their own lighter cycle of triples and doubles.</p>
+    <span class="lbl">After each cycle</span>${seg("autoBump",[["on","Raise my maxes"],["off","Keep them the same"]],s.autoBump===false?"off":"on")}
+    <p class="hint">Upper body maxes go up ${u==="kg"?"2.5 kg":"5 lb"} and lower body ${u==="kg"?"5 kg":"10 lb"} when you log every set in week ${cycLen()-1} at the target weight and reps. Lifts you didn't log that week stay the same.</p></div>`;
+}
+function openEstimate(id){
+  const e=exById(id);S.sheetCtx={est:id};
+  sheet("Estimate your max: "+e.name,`<p class="hint">Enter a recent set you did with good form. Sets of 10 reps or fewer give the best estimate.</p>
+    <div class="grid2"><label>Weight (${S.settings.unit})<input class="inp" id="est-w" data-field="est" inputmode="decimal"></label><label>Reps<input class="inp" id="est-r" data-field="est" inputmode="numeric"></label></div>
+    <p class="est-out" id="est-out">Estimated max: –</p>
+    <button class="btn primary" data-act="saveest">Save as my max</button>`);
+}
+function estValue(){return roundW(e1rm($("#est-w").value,$("#est-r").value))}
 function vLibrary(){
   const q=(S.libQ||"").toLowerCase(),f=S.libF||"all";
   const list=allEx().filter(e=>(f==="all"||e.slot===f)&&(!q||e.name.toLowerCase().includes(q)));
@@ -982,7 +1105,7 @@ function vLibrary(){
   <input class="inp" id="lib-q" data-field="libq" placeholder="Search exercises" value="${esc(S.libQ||"")}" aria-label="Search exercises">
   <div class="filters">${[["all","All"],...Object.entries(SLOTS)].map(([k,l])=>`<button class="chip" data-act="libf" data-val="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}</div>
   <div class="card">${list.map(e=>{const ok=hasEquip(e),fl=flags(e),sb=sportBlocked(e),custom=(S.lib.links||{})[e.id];return `<div class="lib-row${ok&&!fl.length&&!sb?"":" unavail"}" data-ex="${e.id}">
-    <div class="ex"><div style="font-weight:600">${esc(e.name)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span class="tag">${SLOTS[e.slot]}</span>${!ok?'<span class="tag">Needs equipment</span>':""}${sb?`<span class="tag warn">${esc(sportPos().avoidLabel||"Skipped for your sport")}</span>`:""}${fl.length?`<span class="tag warn">Flagged: ${fl.map(x=>lbl(LIMITS,x)).join(", ")}</span>`:""}${custom||e.link?'<span class="tag">Your link</span>':""}${e.custom?'<span class="tag">Yours</span>':""}</div></div>
+    <div class="ex"><div style="font-weight:600">${esc(e.name)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span class="tag">${SLOTS[e.slot]}</span>${!ok?'<span class="tag">Needs equipment</span>':""}${sb?`<span class="tag warn">${esc(blockReason(e))}</span>`:""}${fl.length?`<span class="tag warn">Flagged: ${fl.map(x=>lbl(LIMITS,x)).join(", ")}</span>`:""}${custom||e.link?'<span class="tag">Your link</span>':""}${e.custom?'<span class="tag">Yours</span>':""}</div></div>
     <a class="how" href="${esc(howUrl(e))}" target="_blank" rel="noopener">${icon("video")}How to</a>
     <button class="iconbtn" data-act="editlink" aria-label="Edit link for ${esc(e.name)}">${icon("edit")}</button></div>`}).join("")||'<div class="empty">No exercises match.</div>'}</div>`;
 }
@@ -999,14 +1122,14 @@ function newCode(){let c="";for(let i=0;i<6;i++)c+=CODE_CHARS[Math.floor(Math.ra
 function shareText(days){
   const u=S.settings.unit;
   return days.map(d=>{const L=ssLabels(d.items);return `${d.name} (about ${dayMinutes(d.items)} min)\n`+d.items.map((it,i)=>{const ex=exById(it.ex)||{name:it.name||"Exercise",id:it.ex};
-    return `${L[i]?L[i]+" ":"• "}${ex.name}: ${it.sets} x ${it.reps}${it.weight?" @ "+it.weight+" "+u:""}${it.note?" ("+it.note+")":""}\n   How to: ${howUrl(ex)}`}).join("\n")}).join("\n\n");
+    const e=eff(it);return `${L[i]?L[i]+" ":"• "}${ex.name}: ${e.sets} x ${e.reps}${e.pct?" @ "+(+(e.pct*100).toFixed(1))+"% of max":(e.w?" @ "+e.w+" "+u:"")}${it.note?" ("+it.note+")":""}\n   How to: ${howUrl(ex)}`}).join("\n")}).join("\n\n");
 }
 function copyText(text,el,msg){
   const done=()=>toast(msg||"Copied. Paste it into a text or email.");
   try{navigator.clipboard.writeText(text).then(done,()=>{if(el){el.focus();el.select()}toast("Select the text and copy it.")})}
   catch(e){if(el){el.focus();el.select()}toast("Select the text and copy it.")}
 }
-function packDays(days){return days.map(d=>({name:d.name,type:d.type,items:d.items.map(it=>{const ex=exById(it.ex)||{};return {ex:it.ex,name:ex.name||it.name||"Exercise",slot:it.slot,sets:it.sets,reps:it.reps,rest:it.rest,note:it.note||"",group:it.group||null,link:(S.lib.links||{})[it.ex]||ex.link||""}})}))}
+function packDays(days){return days.map(d=>({name:d.name,type:d.type,items:d.items.map(it=>{const ex=exById(it.ex)||{};return {ex:it.ex,name:ex.name||it.name||"Exercise",slot:it.slot,sets:it.sets,reps:it.reps,rest:it.rest,note:it.note||"",group:it.group||null,main:!!it.main,link:(S.lib.links||{})[it.ex]||ex.link||""}})}))}
 function openShare(idxs){
   const days=idxs.map(i=>S.plan.days[i]);S.sheetCtx={share:idxs};
   sheet(days.length>1?`Share week ${S.plan.week||1}`:`Share ${days[0].name}`,`
@@ -1053,7 +1176,7 @@ async function lookupShare(code){
 }
 function unpackDay(d){
   d.items.forEach(it=>{if(!exById(it.ex)){S.lib.custom.push({id:it.ex,name:it.name,slot:it.slot||"core",req:"bw",avoid:[],link:it.link||""});save("lib")}});
-  return {id:rid(),name:d.name,type:DAYTYPES[d.type]?d.type:"full",locked:false,items:normalizeGroups(d.items.map(it=>({uid:rid(),ex:it.ex,slot:it.slot,sets:it.sets,reps:it.reps,rest:it.rest||90,weight:"",note:it.note||"",group:it.group||null})))};
+  return {id:rid(),name:d.name,type:DAYTYPES[d.type]?d.type:"full",locked:false,items:normalizeGroups(d.items.map(it=>({uid:rid(),ex:it.ex,slot:it.slot,sets:it.sets,reps:it.reps,rest:it.rest||90,weight:"",note:it.note||"",group:it.group||null,main:!!it.main})))};
 }
 function importShare(how){
   const sh=S.sheetCtx&&S.sheetCtx.import;if(!sh)return;const s=S.settings;
@@ -1112,19 +1235,19 @@ function pickerList(q){
 function startDay(di){
   const d=S.plan.days[di];
   S.active={dayId:d.id,dayName:d.name,type:d.type,started:new Date().toISOString(),items:d.items.map(it=>{
-    const last=lastFor(it.ex),r=parseInt(it.reps)||"",w=it.weight||(last?Math.max(...last.sets.map(s=>parseFloat(s.w)||0))||"":"");
-    return {ex:it.ex,group:it.group||null,name:(exById(it.ex)||{}).name,note:it.note,rest:it.rest||90,target:{sets:it.sets,reps:it.reps,weight:it.weight},sets:Array.from({length:it.sets},()=>({w:String(w),r:String(r),done:false}))}
+    const e=eff(it),last=lastFor(it.ex),r=parseInt(e.reps)||"",w=e.w||(last?Math.max(...last.sets.map(s=>parseFloat(s.w)||0))||"":"");
+    return {ex:it.ex,group:it.group||null,name:(exById(it.ex)||{}).name,note:it.note,rest:it.rest||90,target:{sets:e.sets,reps:e.reps,weight:e.w,pct:e.pct},sets:Array.from({length:e.sets},()=>({w:String(w),r:String(r),done:false}))}
   })};
   save("active");tab="train";render();window.scrollTo(0,0);
 }
 function finishWorkout(){
   const a=S.active;
   const sess={id:rid()+Date.now().toString(36),date:new Date().toISOString(),started:a.started,dayId:a.dayId,dayName:a.dayName,type:a.type,
-    items:a.items.map(it=>({ex:it.ex,name:it.name,sets:it.sets.filter(s=>s.done).map(s=>({w:s.w,r:s.r}))}))};
+    week:S.plan.week||1,items:a.items.map(it=>({ex:it.ex,name:it.name,tr:it.target.pct?it.target.reps:null,tw:it.target.pct?it.target.weight:null,sets:it.sets.filter(s=>s.done).map(s=>({w:s.w,r:s.r}))}))};
   addSession(sess);
   // carry the heaviest completed weight forward into the plan
   const day=S.plan.days.find(d=>d.id===a.dayId);
-  if(day){a.items.forEach(it=>{const top=Math.max(0,...it.sets.filter(s=>s.done).map(s=>parseFloat(s.w)||0));const p=day.items.find(x=>x.ex===it.ex);if(p&&top)p.weight=String(top)});save("plan")}
+  if(day){a.items.forEach(it=>{const top=Math.max(0,...it.sets.filter(s=>s.done).map(s=>parseFloat(s.w)||0));const p=day.items.find(x=>x.ex===it.ex);if(p&&top&&!it.target.pct)p.weight=String(top)});save("plan")}
   S.active=null;save("active");stopTimer();tab="history";render();toast("Workout saved. Your week now uses today's weights.");
 }
 function startTimer(sec,label){
@@ -1147,8 +1270,8 @@ document.addEventListener("click",e=>{
   const itEl=t.closest("[data-item]"),ii=itEl?+itEl.dataset.item:null;
   switch(act){
     case "rebuild":{const locked=S.plan.days.filter(d=>d.locked).length,adv=weekDone();const n=buildWeek(true,adv);tab="week";render();
-      toast((adv?`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in`:"Week rebuilt")+(locked?`, ${locked} locked day${locked>1?"s":""} kept.`:"."));break}
-    case "nextweek":{const n=buildWeek(true,true);render();window.scrollTo(0,0);toast(`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in.`);break}
+      toast((adv?`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in`:"Week rebuilt")+(locked?`, ${locked} locked day${locked>1?"s":""} kept.`:".")+bumpMsg());break}
+    case "nextweek":{const n=buildWeek(true,true);render();window.scrollTo(0,0);toast(`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in.`+bumpMsg());break}
     case "share":openShare([di]);break;
     case "sharewk":openShare(S.plan.days.map((_,i)=>i));break;
     case "copytext":copyText($("#share-text").value,$("#share-text"));break;
@@ -1164,6 +1287,10 @@ document.addEventListener("click",e=>{
     case "signout":closeSheet();firebase.auth().signOut().then(()=>toast("Signed out."));break;
     case "copylink":copyText(S.sheetCtx.link,$("#share-link"),"Link copied. Send it to anyone.");break;
     case "nativeshare":navigator.share({title:"Workout: "+S.sheetCtx.title,text:"Here's a workout from my planner:",url:S.sheetCtx.link}).catch(()=>{});break;
+    case "estmax":openEstimate(t.closest("[data-ex]").dataset.ex);break;
+    case "saveest":{const v=estValue();if(!v){toast("Enter a weight and 1 to 10 reps.");break}S.settings.maxes[S.sheetCtx.est]=v;save("settings");closeSheet();render();toast(`Max saved: ${v} ${S.settings.unit}.`);break}
+    case "usemax":{const id=t.closest("[data-ex]").dataset.ex;S.settings.maxes[id]=+t.dataset.val;save("settings");render();toast("Max updated.");break}
+    case "addmax":{const v=$("#max-add").value;if(!v)break;S.settings.maxes[v]=S.settings.maxes[v]||0;save("settings");render();const n=$("#max-"+v);if(n&&n.focus)n.focus();break}
     case "backup":openBackup();break;
     case "restore":openRestore();break;
     case "copybk":copyText($("#bk-text").value,$("#bk-text"),"Backup copied.");break;
@@ -1197,8 +1324,9 @@ document.addEventListener("click",e=>{
       if(f==="sport"){const p=PROFILES[v];if(!p)v="none";s.position=p&&p.positions?p.positions[0][0]:null;s.season=s.season||"off";
         const sp=p&&(SPORT_PRESETS[v]||{})[s.days];if(sp){s.split=[...sp[1]];msg=` Split set to ${sp[0]}.`}
         msg=(p?p.label+" training on.":"Sport training off.")+msg+" Tap Rebuild my week to apply."}
-      if(f==="minutes")v=+v;
+      if(f==="minutes"||f==="cycleLen")v=+v;
       if(f==="supersets")v=v==="on";
+      if(f==="pctOn"||f==="autoBump")v=v==="on";
       s[f]=v;save("settings");render();if(msg)toast(msg);break}
     case "addeq":addOtherEquip();break;
     case "deleq":S.settings.otherEquip.splice(+t.dataset.val,1);save("settings");render();break;
@@ -1236,12 +1364,14 @@ document.addEventListener("change",e=>{
   else if(f==="daytype"){const i=+dayEl.dataset.day;day.type=t.value;S.settings.split[i]=t.value;day.items=genItems(t.value,i,{week:S.plan.week||1});day.name=dayName(t.value,i,S.settings.split);save("plan");save("settings");render();toast("Rebuilt as a "+DAYTYPES[t.value].label+" day.")}
   else if(f==="splitday"){S.settings.split[+t.dataset.i]=t.value;save("settings");render()}
   else if(f==="chartex"){S.chartEx=t.value;drawChart()}
+  else if(f==="max"){const v=parseFloat(t.value);if(v>0)S.settings.maxes[t.dataset.ex]=v;else delete S.settings.maxes[t.dataset.ex];save("settings")}
 });
 document.addEventListener("input",e=>{
   const t=e.target,f=t.dataset.field;if(!f)return;
   if((f==="w"||f==="r")&&S.active){const ti=+t.closest("[data-titem]").dataset.titem,si=+t.closest("[data-set]").dataset.set;S.active.items[ti].sets[si][f]=t.value;save("active");
     if(f==="w"){const p=t.closest("[data-titem]").querySelector(".plates");const it=S.active.items[ti],ex=exById(it.ex)||{req:""};const nu=it.sets.find(s=>!s.done)||it.sets[it.sets.length-1];if(p&&ex.req.includes("bb"))p.textContent=platesFor(nu.w)}}
   else if(f==="libq"){S.libQ=t.value;const pos=t.selectionStart;render();const n=$("#lib-q");n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}
+  else if(f==="est"){const v=estValue();$("#est-out").textContent="Estimated max: "+(v?v+" "+S.settings.unit:"–")}
   else if(f==="pickq"){$("#pick-list").innerHTML=optList(pickerList(t.value),S.sheetCtx.act)}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#sheet-root").innerHTML)closeSheet();if(e.key==="Enter"&&e.target.id==="oe-in"){e.preventDefault();addOtherEquip()}if(e.key==="Enter"&&e.target.id==="imp-code"){e.preventDefault();lookupShare(e.target.value)}});
