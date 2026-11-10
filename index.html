@@ -118,6 +118,7 @@ h3{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size
 .est-out{font-family:var(--display);font-weight:800;font-size:1.6rem;margin:0}
 .maxes-card{border-color:var(--accent)}
 .maxes-card h3{color:var(--accent)}
+.warn-btn{border-color:var(--warn);color:var(--warn);white-space:normal;text-align:left}
 .locked-tag{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);font-weight:600}
 ol.items{list-style:none;margin:0;padding:0}
 .item{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
@@ -930,7 +931,7 @@ function vWeek(){
   const cyc=pctActive()&&Object.keys(s.maxes||{}).length,cw=cycleWk(),cycEnd=cyc&&isLightWk();
   return `${signCard}${complete?`<div class="card next-wk"><div><h3>Week ${S.plan.week||1} done</h3><p class="hint">${cycEnd?`That finishes your ${cycLen()}-week cycle. ${s.autoBump===false?"Your maxes stay the same.":`Maxes go up for lifts where you hit every rep in week ${cycLen()-1}.`} `:""}Next week keeps your main lifts and rotates in new accessory exercises, using the weights you just lifted.</p></div><button class="btn primary" data-act="nextweek">${icon("redo")}Build week ${(S.plan.week||1)+1}</button></div>`:""}
   <div class="head-row"><div><h2>Week ${S.plan.week||1}</h2><p class="meta">${s.days} days · ${esc(splitSummary())} · ${sportOn()?esc(sportLabel())+" · ":""}${cyc?`Cycle week ${cw+1} of ${cycLen()}${isLightWk()?" (lighter)":""} · `:""}${targetMin()?targetMin()+" min":"No time limit"}${s.supersets?" · Supersets":""} · ${lbl(INTENSITY,s.intensity)} · ${lbl(STYLES,s.style)}</p></div>
-  <div class="head-btns"><button class="btn" data-act="sharewk">${icon("share")}Share week</button><button class="btn" data-act="import">${icon("plus")}Add shared workout</button><button class="btn" data-act="rebuild">${icon("redo")}Rebuild unlocked days</button></div></div>
+  <div class="head-btns">${complete?"":`<button class="btn${S.confirmNext?" warn-btn":""}" data-act="skipweek">${icon("play")}${S.confirmNext?`${S.plan.days.length-done.size} day${S.plan.days.length-done.size===1?"":"s"} not done. Tap again to start week ${(S.plan.week||1)+1}`:"Start next week"}</button>`}<button class="btn" data-act="sharewk">${icon("share")}Share week</button><button class="btn" data-act="import">${icon("plus")}Add shared workout</button><button class="btn" data-act="rebuild">${icon("redo")}Rebuild unlocked days</button></div></div>
   ${S.plan.days.map((d,di)=>`<article class="card day" data-day="${di}">
     <div class="day-h">${typeChip(d.type)}
       <div class="name"><input class="dayname" data-field="dayname" value="${esc(d.name)}" aria-label="Day name">
@@ -1263,7 +1264,7 @@ let actx;function beep(){try{actx=actx||new AudioContext();const o=actx.createOs
 
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tab]");if(!t)return;
-  if(t.dataset.tab){tab=t.dataset.tab;closeSheet();render();window.scrollTo(0,0);return}
+  if(t.dataset.tab){S.confirmNext=false;tab=t.dataset.tab;closeSheet();render();window.scrollTo(0,0);return}
   const act=t.dataset.act;
   if(act==="closesheet"){if(e.target===t||t.tagName==="BUTTON")closeSheet();return}
   const dayEl=t.closest("[data-day]"),di=dayEl?+dayEl.dataset.day:null,day=di!=null&&S.plan.days[di];
@@ -1271,6 +1272,8 @@ document.addEventListener("click",e=>{
   switch(act){
     case "rebuild":{const locked=S.plan.days.filter(d=>d.locked).length,adv=weekDone();const n=buildWeek(true,adv);tab="week";render();
       toast((adv?`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in`:"Week rebuilt")+(locked?`, ${locked} locked day${locked>1?"s":""} kept.`:".")+bumpMsg());break}
+    case "skipweek":{if(!S.confirmNext){S.confirmNext=true;render();clearTimeout(S.cnT);S.cnT=setTimeout(()=>{if(S.confirmNext){S.confirmNext=false;if(tab==="week")render()}},6000);break}
+      S.confirmNext=false;const n=buildWeek(true,true);render();window.scrollTo(0,0);toast(`Week ${S.plan.week} started. ${n} exercise${n===1?"":"s"} rotated in.`+bumpMsg());break}
     case "nextweek":{const n=buildWeek(true,true);render();window.scrollTo(0,0);toast(`Week ${S.plan.week} built. ${n} exercise${n===1?"":"s"} rotated in.`+bumpMsg());break}
     case "share":openShare([di]);break;
     case "sharewk":openShare(S.plan.days.map((_,i)=>i));break;
