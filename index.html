@@ -169,6 +169,26 @@ table.sets tr.done input{border-color:transparent;background:var(--sunk)}
 .check{width:40px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--muted)}
 tr.done .check{background:var(--good);border-color:var(--good);color:#fff}
 .plates{font-size:.75rem;color:var(--muted);font-family:var(--mono)}
+.music{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.mprog{height:3px;background:var(--sunk)}
+.mprog i{display:block;height:100%;width:0;background:var(--good);transition:width 1s linear}
+.mrow{display:flex;align-items:center;gap:10px;padding-block:8px;height:60px;box-sizing:border-box}
+.mart{width:42px;height:42px;border-radius:6px;flex:none;object-fit:cover;background:var(--sunk);display:grid;place-items:center;color:var(--muted)}
+.mtxt{flex:1;min-width:0;display:flex;flex-direction:column;text-decoration:none;color:var(--fg)}
+.mtxt strong,.mtxt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtxt strong{font-size:.92rem}
+.mtxt span{font-size:.78rem;color:var(--muted)}
+.mplay{width:44px;height:44px;border-radius:50%;border:0;background:var(--fg);color:var(--bg);display:grid;place-items:center;cursor:pointer;flex:none}
+.mplay .icon,.mrow .iconbtn .icon{width:18px;height:18px}
+.mplay .icon{fill:currentColor}
+.mrow .iconbtn{width:40px;height:40px}
+.mrow .iconbtn .icon{fill:currentColor}
+body.has-music main{padding-bottom:200px}
+body.has-music .timer{bottom:calc(63px + env(safe-area-inset-bottom,0px));padding-bottom:0}
+body.has-music .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+details.steps{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+details.steps summary{cursor:pointer;font-weight:600}
+details.steps ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
 .timer{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--fg);color:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
 .timer .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
 .timer .t{font-family:var(--display);font-weight:800;font-size:2rem;font-variant-numeric:tabular-nums;min-width:4ch}
@@ -226,6 +246,10 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);border-radius:8px
   <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/></symbol>
   <symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.6M20 4v5h-5"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5l10 7-10 7zM18 5v14"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5L8 12l10 7zM6 5v14"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
@@ -250,6 +274,7 @@ select.inp,input.inp,textarea.inp{border:1px solid var(--line);border-radius:8px
 </header>
 <main class="wrap" id="view"></main>
 <div class="timer" id="timer" hidden></div>
+<div class="music" id="music" hidden></div>
 <div id="sheet-root"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -922,6 +947,7 @@ function render(){
   const v=$("#view");
   v.innerHTML=({week:vWeek,train:vTrain,history:vHistory,setup:vSetup,library:vLibrary})[tab]();
   if(tab==="history")drawChart();
+  renderBar();
 }
 
 function vWeek(){
@@ -1057,7 +1083,8 @@ function vSetup(){
     <div class="field"><span class="lbl">Injuries / limitations</span>${multi("limits",LIMITS,s.limits)}<p class="hint">Exercises that load these areas are left out of new plans and flagged in your library.</p></div>
     <div class="field"><span class="lbl">Units</span>${seg("unit",[["lb","Pounds"],["kg","Kilograms"]],s.unit)}</div>
     <div class="field"><span class="lbl">Back up or move your data</span><div class="seg"><button data-act="backup">Copy backup</button><button data-act="restore">Restore from backup</button></div><p class="hint">Use this to bring everything over from the Claude version of the planner, or to keep a copy somewhere safe.</p></div>
-  </section>`;
+  </section>
+  ${vMusic()}`;
 }
 
 function otherCount(name){
@@ -1098,6 +1125,139 @@ function openEstimate(id){
     <button class="btn primary" data-act="saveest">Save as my max</button>`);
 }
 function estValue(){return roundW(e1rm($("#est-w").value,$("#est-r").value))}
+/* ---------- Spotify remote ----------
+   Controls the Spotify app on the viewer's phone, computer or speaker through the Web API.
+   Sign-in uses the PKCE flow, so no secret is needed; tokens stay on each device. */
+const SP_SCOPES="user-read-playback-state user-modify-playback-state user-read-currently-playing";
+const SP={tok:ls.get("sp"),now:null,at:0,iv:null,busy:false,err:""};
+function spRedirect(){return location.origin+location.pathname.replace(/index\.html$/,"")}
+function spOn(){return !!(SP.tok&&SP.tok.refresh&&SP.tok.id)}
+function b64url(buf){return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+async function spConnect(){
+  const id=(S.settings.spClient||"").trim();
+  if(!/^[0-9a-f]{32}$/i.test(id)){toast("Paste your Spotify Client ID first. It's 32 letters and numbers.");return}
+  if(!window.crypto||!crypto.subtle){toast("This browser can't connect to Spotify. Open the site in Safari or Chrome.");return}
+  const v=b64url(crypto.getRandomValues(new Uint8Array(48))),st=b64url(crypto.getRandomValues(new Uint8Array(12)));
+  const ch=b64url(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)));
+  ls.set("spv",{v,st,id,tab});
+  location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({client_id:id,response_type:"code",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:ch,scope:SP_SCOPES,state:st});
+}
+async function spToken(body){
+  const r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error_description||j.error||("HTTP "+r.status));e.code=j.error;throw e}
+  return j;
+}
+function spSave(t,id){SP.tok={access:t.access_token,refresh:t.refresh_token||(SP.tok&&SP.tok.refresh),exp:Date.now()+((t.expires_in||3600)-60)*1000,id:id||(SP.tok&&SP.tok.id)};ls.set("sp",SP.tok)}
+async function spHandleReturn(){
+  const q=new URLSearchParams(location.search);if(!q.has("code")&&!q.has("error"))return;
+  const pend=ls.get("spv");ls.set("spv",null);
+  try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+  if(pend&&pend.tab){tab=pend.tab;render()}
+  if(q.get("error")){toast(q.get("error")==="access_denied"?"Spotify connection was canceled.":"Spotify said: "+q.get("error"));return}
+  if(!pend||pend.st!==q.get("state")){toast("That Spotify sign-in didn't match. Tap Connect Spotify again.");return}
+  try{const t=await spToken({grant_type:"authorization_code",code:q.get("code"),redirect_uri:spRedirect(),client_id:pend.id,code_verifier:pend.v});spSave(t,pend.id);render();toast("Spotify connected.")}
+  catch(e){toast("Couldn't connect Spotify: "+e.message)}
+}
+async function spAccess(){
+  if(!spOn())return null;
+  if(Date.now()<SP.tok.exp)return SP.tok.access;
+  try{spSave(await spToken({grant_type:"refresh_token",refresh_token:SP.tok.refresh,client_id:SP.tok.id}))}
+  catch(e){if(e.code==="invalid_grant"||e.code==="invalid_client"){spDisconnect();throw new Error("Your Spotify sign-in expired. Connect again in Setup.")}throw e}
+  return SP.tok.access;
+}
+async function spApi(method,path,body){
+  const a=await spAccess();
+  const r=await fetch("https://api.spotify.com/v1"+path,{method,headers:Object.assign({Authorization:"Bearer "+a},body?{"Content-Type":"application/json"}:{}),body:body?JSON.stringify(body):undefined});
+  if(r.status===204||r.status===202)return null;
+  const j=await r.json().catch(()=>null);
+  if(!r.ok){const e=new Error((j&&j.error&&j.error.message)||("HTTP "+r.status));e.status=r.status;e.reason=j&&j.error&&j.error.reason;throw e}
+  return j;
+}
+function spErr(e){
+  if(e.reason==="NO_ACTIVE_DEVICE"||e.message==="nodevice")return "Open Spotify on your phone or speaker first, then tap play again.";
+  if(e.reason==="PREMIUM_REQUIRED")return "Controlling playback needs Spotify Premium.";
+  if(e.status===403)return "Spotify blocked that. If you're not the app's owner, ask them to add you under User Management in the Spotify dashboard.";
+  return "Spotify: "+e.message;
+}
+async function spPoll(){
+  if(!spOn()||document.hidden)return;
+  try{SP.now=await spApi("GET","/me/player?additional_types=episode");SP.at=Date.now();SP.err=""}
+  catch(e){SP.err=spErr(e)}
+  renderBar();
+}
+function spStart(){clearInterval(SP.iv);SP.iv=null;if(!spOn()){renderBar();return}spPoll();SP.iv=setInterval(spPoll,5000)}
+function spDisconnect(){SP.tok=null;SP.now=null;ls.set("sp",null);clearInterval(SP.iv);SP.iv=null;renderBar()}
+function spPlaylistUri(){const m=String(S.settings.spPlaylist||"").match(/(playlist|album)[\/:]([A-Za-z0-9]{22})/);return m?`spotify:${m[1]}:${m[2]}`:""}
+async function spPlayStart(useList){
+  const uri=useList?spPlaylistUri():"",body=uri?{context_uri:uri}:undefined;
+  try{await spApi("PUT","/me/player/play",body)}
+  catch(e){
+    if(e.status!==404&&e.reason!=="NO_ACTIVE_DEVICE")throw e;
+    // nothing active: wake the first device Spotify knows about
+    const d=await spApi("GET","/me/player/devices"),dev=((d&&d.devices)||[]).find(x=>!x.is_restricted);
+    if(!dev)throw new Error("nodevice");
+    await spApi("PUT","/me/player/play?device_id="+encodeURIComponent(dev.id),body);
+  }
+}
+async function spAct(kind){
+  if(SP.busy)return;SP.busy=true;
+  const n=SP.now;
+  try{
+    if(kind==="toggle"){
+      if(n&&n.is_playing){await spApi("PUT","/me/player/pause");n.is_playing=false}
+      else{await spPlayStart(!(n&&n.item));if(n)n.is_playing=true}
+    }else if(kind==="next")await spApi("POST","/me/player/next");
+    else if(kind==="prev")await spApi("POST","/me/player/previous");
+  }catch(e){toast(spErr(e))}
+  SP.busy=false;SP.at=Date.now();renderBar();setTimeout(spPoll,500);
+}
+function renderBar(){
+  const bar=document.getElementById("music");if(!bar)return;
+  const show=spOn()&&S.settings.spBar!==false;
+  bar.hidden=!show;document.body.classList.toggle("has-music",show);
+  if(!show){bar.innerHTML="";return}
+  const n=SP.now,it=n&&n.item,imgs=it?((it.album&&it.album.images)||it.images||[]):[],img=imgs[imgs.length-1];
+  const playing=!!(n&&n.is_playing);
+  const title=it?it.name:"Nothing playing";
+  const sub=it?((it.artists||[]).map(a=>a.name).join(", ")||(it.show&&it.show.name)||""):(SP.err||(spPlaylistUri()?"Tap play to start your workout playlist":"Start a song in Spotify, or tap play"));
+  const link=it&&it.external_urls&&it.external_urls.spotify;
+  bar.innerHTML=`<div class="mprog"><i id="mprog"></i></div><div class="wrap mrow">
+    ${img?`<img class="mart" src="${esc(img.url)}" alt="" onerror="this.style.visibility='hidden'">`:`<span class="mart">${icon("music")}</span>`}
+    <a class="mtxt" ${link?`href="${esc(link)}" target="_blank" rel="noopener"`:""}><strong>${esc(title)}</strong><span>${esc(sub)}${it&&n.device?` · ${esc(n.device.name)}`:""}</span></a>
+    <button class="iconbtn" data-act="sp-prev" aria-label="Previous song">${icon("prev")}</button>
+    <button class="mplay" data-act="sp-toggle" aria-label="${playing?"Pause":"Play"}">${icon(playing?"pause":"play")}</button>
+    <button class="iconbtn" data-act="sp-next" aria-label="Next song">${icon("next")}</button></div>`;
+  spProgress();
+}
+function spProgress(){
+  const f=document.getElementById("mprog");if(!f)return;const n=SP.now;
+  if(!n||!n.item||!n.item.duration_ms){f.style.width="0";return}
+  f.style.width=(Math.min(1,((n.progress_ms||0)+(n.is_playing?Date.now()-SP.at:0))/n.item.duration_ms)*100).toFixed(2)+"%";
+}
+setInterval(()=>{if(SP.now&&SP.now.is_playing)spProgress()},1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)spPoll()});
+function vMusic(){
+  const s=S.settings,on=spOn(),seg=(field,opts,val)=>`<div class="seg">${opts.map(([k,l])=>`<button data-act="set" data-field="${field}" data-val="${k}" aria-pressed="${String(val)===String(k)}">${l}</button>`).join("")}</div>`;
+  return `<section class="card"><div class="field"><h3>Music</h3>${on?`
+    <p class="hint">Spotify is connected on this device. The bar at the bottom shows what's playing in your Spotify app, on your phone, computer or a speaker, and lets you play, pause and skip.</p>
+    ${seg("spBar",[["on","Show music bar"],["off","Hide it"]],s.spBar===false?"off":"on")}
+    <label class="meta" style="display:flex;flex-direction:column;gap:4px" for="sp-pl">Workout playlist (optional)<input class="inp" id="sp-pl" data-field="spPlaylist" placeholder="Paste a Spotify playlist or album link" value="${esc(s.spPlaylist||"")}"></label>
+    <p class="hint">When nothing is playing, the play button starts this playlist. In Spotify, tap ⋯ on a playlist, then Share, then Copy link.</p>
+    <div><button class="btn danger" data-act="sp-disconnect">Disconnect Spotify</button></div>`:`
+    <p class="hint">Connect Spotify to get a music bar at the bottom of the app with play, pause and skip. It controls the Spotify app on your phone, computer or speaker. Needs Spotify Premium.</p>
+    <details class="steps"${s.spClient?"":" open"}><summary>One-time setup (about 5 minutes)</summary><ol>
+      <li>On a computer, go to <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> and log in with your Spotify account. Accept the developer terms if asked.</li>
+      <li>Click <strong>Create app</strong>. Name it <strong>Two Plates</strong> and type any short description.</li>
+      <li>Under <strong>Redirect URIs</strong>, paste this exact address and click <strong>Add</strong>:<span class="code-row" style="margin-top:6px"><input class="inp" id="sp-redir" readonly value="${esc(spRedirect())}" aria-label="Redirect URI"><button class="btn sm" data-act="copyredir">Copy</button></span></li>
+      <li>Under <strong>Which API/SDKs are you planning to use?</strong>, check <strong>Web API</strong>. Agree to the terms and click <strong>Save</strong>.</li>
+      <li>On the app's page, copy the <strong>Client ID</strong> and paste it below.</li>
+    </ol></details>
+    <label class="meta" style="display:flex;flex-direction:column;gap:4px" for="sp-client">Spotify Client ID<input class="inp" id="sp-client" data-field="spClient" autocomplete="off" spellcheck="false" placeholder="32 letters and numbers" value="${esc(s.spClient||"")}"></label>
+    <div><button class="btn primary" data-act="sp-connect">${icon("music")}Connect Spotify</button></div>
+    <p class="hint">You'll sign in to Spotify and come right back here. Connect once on each phone or computer you use.</p>`}
+  </div></section>`;
+}
 function vLibrary(){
   const q=(S.libQ||"").toLowerCase(),f=S.libF||"all";
   const list=allEx().filter(e=>(f==="all"||e.slot===f)&&(!q||e.name.toLowerCase().includes(q)));
@@ -1294,6 +1454,12 @@ document.addEventListener("click",e=>{
     case "saveest":{const v=estValue();if(!v){toast("Enter a weight and 1 to 10 reps.");break}S.settings.maxes[S.sheetCtx.est]=v;save("settings");closeSheet();render();toast(`Max saved: ${v} ${S.settings.unit}.`);break}
     case "usemax":{const id=t.closest("[data-ex]").dataset.ex;S.settings.maxes[id]=+t.dataset.val;save("settings");render();toast("Max updated.");break}
     case "addmax":{const v=$("#max-add").value;if(!v)break;S.settings.maxes[v]=S.settings.maxes[v]||0;save("settings");render();const n=$("#max-"+v);if(n&&n.focus)n.focus();break}
+    case "sp-connect":spConnect();break;
+    case "sp-disconnect":spDisconnect();render();toast("Spotify disconnected on this device.");break;
+    case "sp-toggle":spAct("toggle");break;
+    case "sp-next":spAct("next");break;
+    case "sp-prev":spAct("prev");break;
+    case "copyredir":copyText(spRedirect(),$("#sp-redir"),"Address copied.");break;
     case "backup":openBackup();break;
     case "restore":openRestore();break;
     case "copybk":copyText($("#bk-text").value,$("#bk-text"),"Backup copied.");break;
@@ -1329,7 +1495,7 @@ document.addEventListener("click",e=>{
         msg=(p?p.label+" training on.":"Sport training off.")+msg+" Tap Rebuild my week to apply."}
       if(f==="minutes"||f==="cycleLen")v=+v;
       if(f==="supersets")v=v==="on";
-      if(f==="pctOn"||f==="autoBump")v=v==="on";
+      if(f==="pctOn"||f==="autoBump"||f==="spBar")v=v==="on";
       s[f]=v;save("settings");render();if(msg)toast(msg);break}
     case "addeq":addOtherEquip();break;
     case "deleq":S.settings.otherEquip.splice(+t.dataset.val,1);save("settings");render();break;
@@ -1367,6 +1533,8 @@ document.addEventListener("change",e=>{
   else if(f==="daytype"){const i=+dayEl.dataset.day;day.type=t.value;S.settings.split[i]=t.value;day.items=genItems(t.value,i,{week:S.plan.week||1});day.name=dayName(t.value,i,S.settings.split);save("plan");save("settings");render();toast("Rebuilt as a "+DAYTYPES[t.value].label+" day.")}
   else if(f==="splitday"){S.settings.split[+t.dataset.i]=t.value;save("settings");render()}
   else if(f==="chartex"){S.chartEx=t.value;drawChart()}
+  else if(f==="spClient"){S.settings.spClient=t.value.trim();save("settings")}
+  else if(f==="spPlaylist"){S.settings.spPlaylist=t.value.trim();save("settings");if(t.value.trim()&&!spPlaylistUri())toast("That doesn't look like a Spotify playlist or album link.");else if(t.value.trim())toast("Workout playlist saved.")}
   else if(f==="max"){const v=parseFloat(t.value);if(v>0)S.settings.maxes[t.dataset.ex]=v;else delete S.settings.maxes[t.dataset.ex];save("settings")}
 });
 document.addEventListener("input",e=>{
@@ -1384,6 +1552,7 @@ S.settings=ls.get("settings");S.plan=ls.get("plan");S.lib=ls.get("lib")||{custom
 ensureDefaults();
 if(S.active)tab="train";
 render();setSync();
+spHandleReturn().finally(spStart);
 connect();
 window.addEventListener("hashchange",checkShareHash);
 })();

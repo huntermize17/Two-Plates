@@ -59,9 +59,26 @@ On the **Week** tab, tap the share button on any day, or **Share week** at the t
 - **Copy as text** gives you the workout with how-to video links to paste into a text or email. Works for anyone.
 - **Create share code** gives you a link. Anyone who opens it can sign in with Google and add the workout to their own planner with one tap. Everyone's plan and history stay private to them.
 
+## Music bar (Spotify)
+
+Two Plates can show a music bar at the bottom of the app with play, pause and skip. It controls the Spotify app on your phone, computer or speaker. You need **Spotify Premium**.
+
+1. On a computer, go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) and log in with your Spotify account.
+2. Click **Create app**. Name it `Two Plates` and type any short description.
+3. Under **Redirect URIs**, add your site's exact address, for example `https://YOUR-GITHUB-USERNAME.github.io/two-plates/` (with the slash at the end). The app shows the exact address to use under **Setup → Music**, with a Copy button.
+4. Check **Web API**, agree to the terms and click **Save**.
+5. Copy the app's **Client ID**.
+6. In Two Plates, go to **Setup → Music**, paste the Client ID, and tap **Connect Spotify**. Do this once on each phone or computer you use.
+
+Optional: paste a Spotify playlist link under **Workout playlist** so the play button starts it when nothing is playing.
+
+Spotify only lets a personal developer app be used by up to 5 people, and the app's owner needs Premium. To let someone else use your music bar, add their Spotify email under **User Management** in your app on the Spotify dashboard.
+
 ## Troubleshooting
 
 - **"This site isn't on Firebase's authorized domains list"**: redo step 3 and make sure the domain matches your site exactly.
 - **Header says "Sign-in not set up yet"**: `firebase-config.js` still has the example `PASTE_` values, or the file didn't get uploaded.
 - **Sign-in window doesn't open on your phone**: the app falls back to a full-page sign-in. If that also fails, check that your browser isn't blocking pop-ups for the site.
+- **Spotify says "INVALID_CLIENT: Invalid redirect URI"**: the address in your Spotify app's Redirect URIs must match the one shown under Setup → Music exactly, including the slash at the end.
+- **Music bar says to open Spotify first**: Spotify needs an active device. Open the Spotify app on your phone, play anything for a second, then use the bar.
 - **"Couldn't reach your account"**: usually the security rules weren't published (step 5). Everything still saves on the device in the meantime.
