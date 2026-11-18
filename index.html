@@ -1140,7 +1140,7 @@ async function spConnect(){
   const v=b64url(crypto.getRandomValues(new Uint8Array(48))),st=b64url(crypto.getRandomValues(new Uint8Array(12)));
   const ch=b64url(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)));
   ls.set("spv",{v,st,id,tab});
-  location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({client_id:id,response_type:"code",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:ch,scope:SP_SCOPES,state:st});
+  location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({client_id:id,response_type:"code",redirect_uri:spRedirect(),code_challenge_method:"S256",code_challenge:ch,scope:SP_SCOPES,state:st,show_dialog:"true"});
 }
 async function spToken(body){
   const r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(body)});
@@ -1177,7 +1177,12 @@ async function spApi(method,path,body){
 function spErr(e){
   if(e.reason==="NO_ACTIVE_DEVICE"||e.message==="nodevice")return "Open Spotify on your phone or speaker first, then tap play again.";
   if(e.reason==="PREMIUM_REQUIRED")return "Controlling playback needs Spotify Premium.";
-  if(e.status===403)return "Spotify blocked that. If you're not the app's owner, ask them to add you under User Management in the Spotify dashboard.";
+  if(e.status===403){
+    const m=String(e.message||"");
+    if(/premium/i.test(m))return "Spotify says the app owner needs Premium. Make the Spotify app with a Premium account. ("+m+")";
+    if(/registered|user may not/i.test(m))return "Spotify hasn't approved this account for your app. Add it under Settings > User Management in the Spotify dashboard. ("+m+")";
+    return "Spotify blocked that: "+m;
+  }
   return "Spotify: "+e.message;
 }
 async function spPoll(){
